@@ -85,12 +85,14 @@ class Budget:
                 os.write(fd, str(os.getpid()).encode())
                 os.close(fd)
                 break
-            except FileExistsError:
+            except (FileExistsError, PermissionError):
+                # Windows reports a lock file that is being deleted by another thread as
+                # PermissionError rather than FileExistsError; both mean "busy, try again".
                 try:
                     if time.time() - self.lockfile.stat().st_mtime > stale_after:
                         self.lockfile.unlink(missing_ok=True)
                         continue
-                except FileNotFoundError:
+                except (FileNotFoundError, PermissionError):
                     continue
                 if time.monotonic() > deadline:
                     raise TimeoutError(f"budget ledger is locked: {self.lockfile}")
@@ -98,7 +100,12 @@ class Budget:
         try:
             yield
         finally:
-            self.lockfile.unlink(missing_ok=True)
+            for _ in range(50):
+                try:
+                    self.lockfile.unlink(missing_ok=True)
+                    break
+                except PermissionError:  # another process has it open for a moment (Windows)
+                    time.sleep(0.02)
 
     # ---------- ledger ----------
 

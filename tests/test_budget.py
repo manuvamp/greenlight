@@ -103,3 +103,25 @@ def test_manual_adjustment_counts(tmp_path):
         f.write(json.dumps({"type": "adjust", "ts": datetime.now(timezone.utc).isoformat(), "usd": 0.9}) + "\n")
     with pytest.raises(BudgetExceeded):
         b.reserve(run="a", kind="llm", label="x", usd=0.2)
+
+
+def test_concurrent_reservations_are_all_recorded(tmp_path):
+    """Many threads reserving at once (parallel eval runs) must neither crash nor lose entries."""
+    import threading
+    b = make(tmp_path, usd_total=100, usd_daily=100, usd_per_run=100)
+    errors = []
+
+    def work(i):
+        try:
+            for _ in range(10):
+                b.reserve(run=f"r{i}", kind="llm", label="x", usd=0.01).settle(usd=0.01)
+        except Exception as e:  # noqa: BLE001
+            errors.append(e)
+
+    threads = [threading.Thread(target=work, args=(i,)) for i in range(8)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert not errors
+    assert b.totals().usd_total == pytest.approx(0.8)
