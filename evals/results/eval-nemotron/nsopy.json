@@ -1,0 +1,207 @@
+{
+  "run_id": "nsopy-1791646173",
+  "status": "green",
+  "headline": "numpy 1.26.4 \u2192 2.4.6: all 26 baseline tests pass",
+  "lib": "numpy",
+  "from_version": "1.26.4",
+  "to_version": "2.4.6",
+  "baseline": {
+    "passed": 26,
+    "failed": 0,
+    "skipped": 7,
+    "total": 33,
+    "collection_error": false
+  },
+  "final": {
+    "passed": 26,
+    "failed": 0,
+    "skipped": 7,
+    "total": 33,
+    "collection_error": false
+  },
+  "verify": {
+    "passed": true,
+    "checks": [
+      {
+        "name": "baseline tests still pass",
+        "ok": true,
+        "detail": "26/26 pass",
+        "severity": "error"
+      },
+      {
+        "name": "numpy 2.x is installed",
+        "ok": true,
+        "detail": "numpy==2.4.6",
+        "severity": "error"
+      },
+      {
+        "name": "upgrade pin kept in manifests",
+        "ok": true,
+        "detail": "requirements.txt: numpy>=2,<3; setup.py: 'numpy>=2,<3',",
+        "severity": "error"
+      },
+      {
+        "name": "no module shadows `numpy`",
+        "ok": true,
+        "detail": "none",
+        "severity": "error"
+      },
+      {
+        "name": "no test files edited",
+        "ok": true,
+        "detail": "none",
+        "severity": "error"
+      },
+      {
+        "name": "test count did not drop",
+        "ok": true,
+        "detail": "33 \u2192 33",
+        "severity": "error"
+      },
+      {
+        "name": "no newly skipped tests",
+        "ok": true,
+        "detail": "none",
+        "severity": "error"
+      },
+      {
+        "name": "no errors suppressed",
+        "ok": true,
+        "detail": "none",
+        "severity": "warn"
+      }
+    ]
+  },
+  "diff": "diff --git a/nsopy/methods/bundle.py b/nsopy/methods/bundle.py\nindex d5c7e1d..6166e05 100644\n--- a/nsopy/methods/bundle.py\n+++ b/nsopy/methods/bundle.py\n@@ -59,7 +59,7 @@ class CuttingPlanesMethod(SolutionMethod, Observable):\n         self.lambda_max = search_box_max\n \n         # initial function value\n-        self.f_hat_lambda_k = -np.infty\n+        self.f_hat_lambda_k = -np.inf\n         self.bundle = []\n \n         # --------------------------------------------------- #\n@@ -203,7 +203,7 @@ class BundleMethod(SolutionMethod, Observable):\n         # self.lambda_min = SEARCH_BOX_MIN\n         # self.lambda_max = SEARCH_BOX_MAX\n         # initial function value\n-        self.f_hat_lambda_k = -np.infty\n+        self.f_hat_lambda_k = -np.inf\n \n         # bundle model\n         self.bundle = []\n@@ -333,4 +333,3 @@ class BundleMethod(SolutionMethod, Observable):\n             ValueError('Type of dual domain not recognized.')\n \n         self.bundle_model.update()\n-\ndiff --git a/nsopy/methods/quasi_monotone.py b/nsopy/methods/quasi_monotone.py\nindex ccb7257..7bd5566 100644\n--- a/nsopy/methods/quasi_monotone.py\n+++ b/nsopy/methods/quasi_monotone.py\n@@ -42,7 +42,7 @@ class SGMDoubleSimpleAveraging(SolutionMethod, Observable):\n         self.lambda_k = np.zeros(self.dimension, dtype=float)\n         self.x_k = None\n         self.diff_d_k = None\n-        self.d_k = -np.infty\n+        self.d_k = -np.inf\n \n         self.gamma = gamma\n         self.s_k = np.zeros(self.dimension, dtype=float)  # this stores \\sum_{k=0}^t diff_d_k\n@@ -92,7 +92,7 @@ class SGMDoubleSimpleAveragingEntropy(SolutionMethod, Observable):\n         self.lambda_k = np.zeros(self.dimension, dtype=float)\n         self.x_k = None\n         self.diff_d_k = None\n-        self.d_k = -np.infty\n+        self.d_k = -np.inf\n \n         self.gamma = gamma\n         self.SR = SR\n@@ -199,3 +199,4 @@ class SGMTripleAveraging(SolutionMethod, Observable):\n         self.lambda_k = (1-tau_t)*self.lambda_k + tau_t*lambda_k_hat\n \n         self.iteration_number += 1\n+\ndiff --git a/requirements.txt b/requirements.txt\nindex 5d7cacb..4eb8b3c 100644\n--- a/requirements.txt\n+++ b/requirements.txt\n@@ -1,2 +1,2 @@\n-numpy>=1.11.2\n+numpy>=2,<3\n pandas>=0.19.0\ndiff --git a/setup.py b/setup.py\nindex b09ed00..0f8aad8 100644\n--- a/setup.py\n+++ b/setup.py\n@@ -5,7 +5,7 @@ from setuptools import setup, find_packages\n \n REQUIRES = [\n     'colorama >= 0.3.7',\n-    'numpy >= 1.11.2',\n+    'numpy>=2,<3',\n     'pandas >= 0.19.0',\n     'python-dateutil >= 2.5.3',\n     'pytz >= 2016.7',\n",
+  "pin_changes": [
+    {
+      "file": "requirements.txt",
+      "before": "numpy>=1.11.2",
+      "after": "numpy>=2,<3"
+    },
+    {
+      "file": "setup.py",
+      "before": "'numpy >= 1.11.2'",
+      "after": "'numpy>=2,<3'"
+    }
+  ],
+  "patches": [
+    {
+      "path": "nsopy/methods/bundle.py",
+      "rule": "bulk",
+      "added": 2,
+      "removed": 3
+    },
+    {
+      "path": "nsopy/methods/quasi_monotone.py",
+      "rule": "bulk",
+      "added": 3,
+      "removed": 2
+    }
+  ],
+  "iterations": 0,
+  "escalations": 0,
+  "usd": 0.01064,
+  "tavily_credits": 40,
+  "seconds": 37.1,
+  "calls": [
+    {
+      "run": "nsopy-1791646173",
+      "role": "plan",
+      "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "thinking": true,
+      "tokens_in": 1257,
+      "tokens_out": 567,
+      "usd": 0.002958,
+      "latency_s": 2.20299999999952,
+      "ok": true,
+      "note": "stop",
+      "backend": "nebius",
+      "served_by": "nvidia/Nemotron-3-Ultra-550b-a55b",
+      "ts": 1791646192.1993203,
+      "model_label": "Nemotron 3 Ultra"
+    },
+    {
+      "run": "nsopy-1791646173",
+      "role": "edit",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "thinking": false,
+      "tokens_in": 343,
+      "tokens_out": 227,
+      "usd": 0.0003072,
+      "latency_s": 2.1090000000003783,
+      "ok": true,
+      "note": "stop",
+      "backend": "nebius",
+      "served_by": "nvidia/nemotron-3-super-120b-a12b",
+      "ts": 1791646195.0969098,
+      "model_label": "Nemotron 3 Super"
+    },
+    {
+      "run": "nsopy-1791646173",
+      "role": "edit",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "thinking": false,
+      "tokens_in": 347,
+      "tokens_out": 298,
+      "usd": 0.00037229999999999994,
+      "latency_s": 2.42200000000048,
+      "ok": true,
+      "note": "stop",
+      "backend": "nebius",
+      "served_by": "nvidia/nemotron-3-super-120b-a12b",
+      "ts": 1791646195.2391562,
+      "model_label": "Nemotron 3 Super"
+    },
+    {
+      "run": "nsopy-1791646173",
+      "role": "edit",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "thinking": false,
+      "tokens_in": 2605,
+      "tokens_out": 2207,
+      "usd": 0.0027678000000000004,
+      "latency_s": 8.140999999999622,
+      "ok": true,
+      "note": "stop",
+      "backend": "nebius",
+      "served_by": "nvidia/nemotron-3-super-120b-a12b",
+      "ts": 1791646201.0784726,
+      "model_label": "Nemotron 3 Super"
+    },
+    {
+      "run": "nsopy-1791646173",
+      "role": "edit",
+      "model": "nvidia/nemotron-3-super-120b-a12b",
+      "thinking": false,
+      "tokens_in": 3703,
+      "tokens_out": 3289,
+      "usd": 0.004071,
+      "latency_s": 12.484000000000378,
+      "ok": true,
+      "note": "stop",
+      "backend": "nebius",
+      "served_by": "nvidia/nemotron-3-super-120b-a12b",
+      "ts": 1791646205.3614936,
+      "model_label": "Nemotron 3 Super"
+    },
+    {
+      "run": "nsopy-1791646173",
+      "role": "write",
+      "model": "nvidia/Nemotron-3_5-Lightning",
+      "thinking": false,
+      "tokens_in": 1392,
+      "tokens_out": 340,
+      "usd": 0.00016512,
+      "latency_s": 1.6869999999998981,
+      "ok": true,
+      "note": "stop",
+      "backend": "nebius",
+      "served_by": "nvidia/Nemotron-3_5-Lightning",
+      "ts": 1791646210.5663004,
+      "model_label": "Nemotron 3.5 Lightning"
+    }
+  ],
+  "summary": "# numpy 1.26.4 \u2192 2.4.6\n\nUpgrade NumPy from 1.26.4 to 2.4.6. All 26 baseline tests pass.\n\n### Changes\n\n| File | Change | Source |\n|------|--------|--------|\n| requirements.txt | `numpy>=1.11.2` \u2192 `numpy>=2,<3` | pin |\n| setup.py | `'numpy >= 1.11.2'` \u2192 `'numpy>=2,<3'` | pin |\n| nsopy/methods/bundle.py | `-np.infty` \u2192 `-np.inf` (2 occurrences) | |\n| nsopy/methods/quasi_monotone.py | `-np.infty` \u2192 `-np.inf` (2 occurrences) | |\n| nsopy/methods/quasi_monotone.py | trailing newline added | |\n\n### Verification\n\n- \u2705 26/26 baseline tests pass\n- \u2705 numpy 2.4.6 installed\n- \u2705 upgrade pin kept in manifests\n- \u2705 no module shadows `numpy`\n- \u2705 no test files edited\n- \u2705 test count stable at 33\n- \u2705 no newly skipped tests\n- \u2705 no errors suppressed (warnings only)\n\n### Notes\n\n- The `-np.infty` \u2192 `-np.inf` replacements fix deprecation warnings in NumPy 2.x.\n- `setup.py` pin format adjusted to match `requirements.txt` style.\n\n_Opened by Greenlight \u00b7 Nemotron on Nebius Token Factory_",
+  "case": "nsopy"
+}
