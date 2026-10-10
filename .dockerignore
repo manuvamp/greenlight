@@ -1,0 +1,12 @@
+.venv/
+.env
+web/node_modules/
+web/dist/
+runs/
+runs-*.log
+evals-*.log
+**/__pycache__/
+.git/
+evals/results/standin-*/
+evals/results/try-*/
+evals/results/precheck-*/

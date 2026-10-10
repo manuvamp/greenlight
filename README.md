@@ -96,18 +96,39 @@ We route each job to the cheapest model that does it well. Every call goes throu
 - `greenlight/executor/contree.py` runs every command as a Sandboxes operation, chaining immutable images, so checkpoints and branches are free.
 - Beta access was requested on Oct 10. Until it's granted, the same `Executor` interface runs on local Docker (`executor/docker.py`).
 
-## Results
+## Results (all on NVIDIA Nemotron via Nebius Token Factory)
 
-_Eval set: real public repositories stuck on an old major version, each pinned to a commit and prechecked (baseline green, bump red). See `evals/dataset.toml` and `evals/results/`._
+**Eval set:** 12 real public repositories stuck on an old major version.
+- Each repo is pinned to a commit.
+- Each one passed a free precheck: its tests pass at baseline and break after the bump. Repos whose old environment can't even be installed were dropped from the set, and that is stated here rather than hidden.
+- Full data: `evals/dataset.toml` and `evals/results/eval-nemotron/`.
 
-| | |
-|---|---|
-| Upgrades attempted | _TBD_ |
-| All baseline tests green, all checks passing | _TBD_ |
-| Median cost per green upgrade | _TBD_ |
-| Median time per green upgrade | _TBD_ |
+| Repo | Upgrade | Result | Tests passing after | Cost | Time |
+|---|---|---|---|---|---|
+| blocklib | pydantic 1.10 → 2.14 | ✅ green | 40/40 | $0.20 | 3m16s |
+| kubedeployer | pydantic 1.10 → 2.14 | ✅ green | 36/36 | $0.37 | 4m52s |
+| terka | SQLAlchemy 1.4 → 2.0 | ✅ green | 33/33 | $0.09 | 1m59s |
+| nsopy | numpy 1.26 → 2.4 | ✅ green | 26/26 | $0.01 | 37s |
+| engorgio | pydantic 1.10 → 2.14 | ◐ partial | 48/55 | $0.37 | 4m49s |
+| pydantic-vault | pydantic 1.10 → 2.14 | ✗ | 34/43 | $0.64 | 6m41s |
+| boardgamebuilder | pydantic 1.10 → 2.14 | ✗ | 39/95 | $0.64 | 5m45s |
+| bdantic | pydantic 1.10 → 2.14 | ✗ | 15/43 | $0.64 | 13m58s |
+| clidantic | pydantic 1.10 → 2.14 | ✗ | 10/23 | $0.64 | 6m14s |
+| noteql | SQLAlchemy 1.4 → 2.0 | ✗ | 0/11 | $0.45 | 5m40s |
+| essential-sqlalchemy | SQLAlchemy 1.4 → 2.0 | ✗ (caught dropping tests) | 0/26 | $0.38 | 17m56s |
+| queueing-tool | numpy 1.26 → 2.4 | harness error (fixed since) | n/a | $0.61 | 6m |
 
-_Ablations (all-Ultra versus routed, without research, without bulk migration) to follow._
+**4 of 11 scored upgrades are fully green with every anti-cheat check passing, plus 1 partial.**
+- Median cost per green upgrade: **$0.14**. Median time: **2m37s**.
+- Five runs stopped at the $0.75 per-run cap while still improving.
+- **Total cost of the whole eval: $5.03.** Super (editing) is 95% of that; Ultra's planning is 5%; Lightning's doc digestion and PR writing cost $0.004.
+- **No failure is ever reported as a pass.** essential-sqlalchemy's edits made 8 tests stop running, and verification caught it.
+
+**What we learned:**
+- Nemotron 3 Super makes small, careful edits, one tool call per turn. Multi-file migrations take it many steps.
+- One-shot whole-file rewrites (the *Migrate* stage) were the biggest single improvement. On the bundled example they cut cost from $0.20 to $0.04 and halved wall time.
+- Import errors surface one at a time. So the *repair rounds* treat "the error changed" as progress, even before any test passes.
+- To save credit, we developed the agent loop against cheaper stand-in models served through a local OpenAI-compatible proxy (`GREENLIGHT_BACKEND=standin`). Every number above is from Nemotron on Token Factory.
 
 ## Run it yourself
 
