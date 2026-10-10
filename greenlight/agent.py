@@ -125,7 +125,9 @@ Rules:
 - Prefer the real new APIs over compatibility layers (never use pydantic.v1 or similar shims).
 - Cover every call site of a changed API, not only the ones the failing tests hit.
 - Keep behaviour identical; note any semantic changes (defaults, validation order) as steps or risks.
-- If a new package is needed (e.g. a feature moved to a separate distribution), list it in dependency_changes."""
+- If a new package is needed (e.g. a feature moved to a separate distribution), list it in dependency_changes.
+- Be concise: at most 25 steps, one sentence each. Group repeated changes into one step per file
+  ("apply R14, R37 throughout"), never one step per call site."""
 
 EDIT_SYSTEM = """You are the code editor of Greenlight. The project's dependency `{lib}` was just upgraded to {spec}
 ({from_v} → {to_v}) and the test suite broke. Make the existing tests pass again by migrating the code.
@@ -384,13 +386,23 @@ class Upgrader:
                 f"Relevant migration rules with call sites:\n{rules_txt or '(none matched; rely on the failures)'}\n"
                 + (f"\n{extra}" if extra else ""))
         msgs = [{"role": "system", "content": PLAN_SYSTEM}, {"role": "user", "content": user}]
-        try:
-            r = self.llm.chat(role, msgs, run=self.run_id, max_tokens=12000, json_mode=True)
-            plan = r.json()
-        except (LLMError, json.JSONDecodeError, ValueError) as e:
-            self.ev.log(f"planner returned no usable JSON ({type(e).__name__}); retrying without reasoning")
-            r = self.llm.chat(role, msgs, run=self.run_id, max_tokens=6000, json_mode=True, thinking=False)
-            plan = r.json()
+        plan = None
+        for attempt, (tokens, think) in enumerate([(12000, None), (8000, False)]):
+            try:
+                r = self.llm.chat(role, msgs, run=self.run_id, max_tokens=tokens, json_mode=True,
+                                  thinking=think)
+            except LLMError as e:
+                self.ev.log(f"planner call failed ({type(e).__name__})")
+                continue
+            plan = _parse_plan(r.content)
+            if plan is not None:
+                break
+            self.ev.log("planner returned no usable JSON; retrying without reasoning" if attempt == 0
+                        else "planner output still unusable; continuing with a minimal plan")
+        if plan is None:
+            # The call sites found by the rule grep still drive the migration pass.
+            plan = {"diagnosis": "Planner output was unusable; migrating every file with matched call sites.",
+                    "dependency_changes": [], "steps": [], "risks": []}
         self.ev.emit("plan", escalation=role == Role.ESCALATE, **plan)
         return plan
 
@@ -648,6 +660,34 @@ class Upgrader:
             return self.llm.chat(Role.WRITE, msgs, run=self.run_id, max_tokens=2500).content
         except (LLMError, BudgetExceeded) as e:
             return f"(summary unavailable: {e})"
+
+
+def _parse_plan(text: str) -> dict | None:
+    """Parse the planner's JSON. If it was cut off mid-way, keep every complete step before the cut."""
+    raw = (text or "").strip()
+    if raw.startswith("```"):
+        raw = raw.split("\n", 1)[1] if "\n" in raw else ""
+        raw = raw.rsplit("```", 1)[0]
+    try:
+        data = json.loads(raw)
+        return data if isinstance(data, dict) else None
+    except json.JSONDecodeError:
+        pass
+    # Truncated: cut back to the last complete step object inside "steps" and close the JSON.
+    i = raw.find('"steps"')
+    if i < 0:
+        return None
+    for end in range(len(raw) - 1, i, -1):
+        if raw[end] != "}":
+            continue
+        try:
+            data = json.loads(raw[: end + 1] + "]}")
+        except json.JSONDecodeError:
+            continue
+        if isinstance(data, dict) and data.get("steps"):
+            data["truncated"] = True
+            return data
+    return None
 
 
 def _code_block(text: str) -> str | None:
