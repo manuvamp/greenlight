@@ -9,3 +9,4 @@ node_modules/
 web/dist/
 runs/
 scripts/*.out.json
+runs-*.log

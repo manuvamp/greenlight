@@ -70,8 +70,9 @@ def main(argv: list[str] | None = None) -> int:
     u.add_argument("--max-minutes", type=float, default=20)
     u.add_argument("--model", help="force one model for every role (ablation)")
     u.add_argument("--no-research", action="store_true", help="skip Tavily rule sheet (ablation)")
-    u.add_argument("--editor", default="cascade", choices=["cascade", "lightning", "super", "ultra", "super-first"],
-                   help="which model edits code (cascade: Lightning, then Super, then Ultra on stalls)")
+    u.add_argument("--editor", default="super-first", choices=["super-first", "cascade", "lightning", "super", "ultra"],
+                   help="which model edits code; super-first = Super, then Ultra if it stalls; "
+                        "cascade = Lightning → Super → Ultra")
     u.add_argument("--executor", default="docker", choices=["docker", "contree"])
     u.add_argument("--runs-dir", default="runs")
     u.add_argument("--show-diff", action="store_true")

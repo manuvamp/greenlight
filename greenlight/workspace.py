@@ -86,10 +86,19 @@ class Project:
 
 
 class Workspace:
-    def __init__(self, sandbox: Sandbox, log=print):
+    def __init__(self, sandbox: Sandbox, log=print, *, baseline_pins: list[str] | None = None,
+                 extra_deps: list[str] | None = None, test_env: dict[str, str] | None = None):
         self.sb = sandbox
         self.log = log
         self.project: Project | None = None
+        # Pins that only hold the *starting* state (e.g. numpy==1.26.4 for a repo with no cap).
+        self.baseline_pins = list(baseline_pins or [])
+        self.extra_deps = list(extra_deps or [])
+        self.test_env = dict(test_env or {})
+
+    def drop_pins(self, lib: str) -> None:
+        """After the bump, stop forcing the old version of `lib` (and its old-major companions)."""
+        self.baseline_pins = [p for p in self.baseline_pins if not mentions(p, lib)]
 
     # ---------- setup ----------
 
@@ -138,7 +147,7 @@ class Workspace:
                         timeout=30)
         return [ln for ln in r.stdout.splitlines() if ln.strip()]
 
-    def detect(self, python_hint: str | None = None, test_cmd: str | None = None) -> Project:
+    def detect(self, python_hint: str | None = None, test_cmd: str | None = None, test_args: str = "") -> Project:
         manifests = self.find_manifests()
         texts = {m: self._read(m) for m in manifests}
         python = python_hint or self._guess_python(texts)
@@ -153,10 +162,14 @@ class Workspace:
         for rf in sorted(req_files, key=lambda f: ("dev" in f or "test" in f, f)):
             cmds.append(f"uv pip install --python {PY} -r {shlex.quote(rf)}")
         cmds.append(f"uv pip install --python {PY} pytest pytest-timeout")
+        if self.extra_deps:
+            cmds.append(f"uv pip install --python {PY} " + " ".join(shlex.quote(d) for d in self.extra_deps))
 
         if not test_cmd:
             test_cmd = (f"{PY} -m pytest -q -rfE -p no:cacheprovider --timeout=120 "
                         f"--junitxml={JUNIT} -o junit_family=xunit2")
+            if test_args:
+                test_cmd += " " + test_args
         self.project = Project(manifests, python, cmds, test_cmd)
         return self.project
 
@@ -191,6 +204,8 @@ class Workspace:
         assert self.project
         p = self.project
         steps = [f"uv venv --quiet --python {p.python} {VENV}"] + p.install_cmds
+        if self.baseline_pins:
+            steps.append(f"uv pip install --python {PY} " + " ".join(shlex.quote(x) for x in self.baseline_pins))
         out: list[str] = []
         last = None
         for i, cmd in enumerate(steps):
@@ -234,7 +249,7 @@ class Workspace:
         if select:
             cmd += " " + " ".join(shlex.quote(s) for s in select)
         self.sb.run(f"rm -f {JUNIT}", timeout=30)
-        r = self.sb.run(cmd, timeout=timeout, env={"PYTHONDONTWRITEBYTECODE": "1"})
+        r = self.sb.run(cmd, timeout=timeout, env={"PYTHONDONTWRITEBYTECODE": "1", **self.test_env})
         xml = ""
         try:
             xml = self.sb.read_file(JUNIT)
