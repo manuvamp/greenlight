@@ -9,6 +9,7 @@ const STEP_ICON: Record<PipelineStep, IconName> = {
   bump: "arrowUp",
   research: "search",
   plan: "sparkles",
+  migrate: "layers",
   fix: "wrench",
   verify: "shield",
   pr: "pr",
@@ -18,6 +19,7 @@ export const StageTimeline = memo(function StageTimeline({
   stages, escalations, iterations,
 }: { stages: StageNode[]; escalations: number; iterations: number }) {
   const lastReached = stages.reduce((acc, s, i) => (s.state !== "pending" ? i : acc), -1);
+  void iterations;
   return (
     <div className="timeline" role="list" aria-label="pipeline stages">
       <div className="timeline-track">
@@ -31,6 +33,8 @@ export const StageTimeline = memo(function StageTimeline({
           <div className="tl-dot">
             {s.state === "done" ? (
               <Icon name="check" size={15} stroke={2.6} />
+            ) : s.state === "skipped" ? (
+              <Icon name="minus" size={15} stroke={2.2} />
             ) : s.state === "failed" ? (
               <Icon name="x" size={15} stroke={2.6} />
             ) : (
@@ -46,7 +50,7 @@ export const StageTimeline = memo(function StageTimeline({
             )}
           </div>
           <div className="tl-note mono">
-            {s.note ?? (s.state === "active" ? "running…" : s.key === "fix" && iterations === 0 ? "" : " ")}
+            {s.note ?? (s.state === "active" ? "running…" : s.state === "skipped" ? "skipped" : " ")}
           </div>
         </div>
       ))}

@@ -4,7 +4,7 @@ import { api } from "../api";
 import type { ReplayMeta, RunEvent, Scoreboard } from "../types";
 import { deriveRun } from "../run/derive";
 import type { RunView } from "../run/derive";
-import { fmtDuration, fmtPct, fmtUsd, repoName } from "../format";
+import { fmtDuration, fmtPct, fmtUsd, plural, repoName } from "../format";
 import { Icon } from "../components/Icon";
 import type { IconName } from "../components/Icon";
 import { Empty, ErrorBox, LibVersions, Skeleton, StatusPill } from "../components/ui";
@@ -46,7 +46,10 @@ function HeroRun({ meta, view }: { meta: ReplayMeta; view: RunView }) {
     { k: "bump", label: "bump", note: stage("bump")?.note ?? "", tone: "err" },
     { k: "research", label: "research", note: stage("research")?.note ?? "", tone: "info", who: "Tavily" },
     { k: "plan", label: "plan", note: stage("plan")?.note ?? "", tone: "info", who: modelOf("plan") },
-    { k: "fix", label: "fix", note: stage("fix")?.note ?? "", tone: view.result?.status === "green" ? "ok" : "err", who: modelOf("edit") },
+    ...(stage("migrate")?.state === "done" || stage("migrate")?.state === "failed"
+      ? [{ k: "migrate", label: "migrate", note: stage("migrate")?.note ?? "", tone: "info" as const, who: modelOf("edit") }]
+      : []),
+    { k: "fix", label: "fix", note: stage("fix")?.state === "skipped" ? "not needed" : stage("fix")?.note ?? "", tone: view.result?.status === "green" ? "ok" : "err", who: modelOf("edit") },
     { k: "verify", label: "verify", note: stage("verify")?.note ?? "", tone: view.verify?.passed ? "ok" : "err" },
     { k: "pr", label: "pull request", note: stage("pr")?.note ?? "", tone: "ok", who: modelOf("write") },
   ];
@@ -162,7 +165,7 @@ export function Home() {
               <Icon name="trophy" size={18} />
               <div>
                 <div className="teaser-title">Eval scoreboard</div>
-                <div className="teaser-sub">{board.cases} real repos stuck on an old major{board.tag ? ` · ${board.tag}` : ""}</div>
+                <div className="teaser-sub">{plural(board.cases, "real repo")} stuck on an old major{board.tag ? ` · ${board.tag}` : ""}</div>
               </div>
             </div>
             <div className="teaser-stats">

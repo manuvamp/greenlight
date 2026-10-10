@@ -10,23 +10,32 @@ import type {
 
 // ---------------- stages ----------------
 
-export const PIPELINE = ["prepare", "baseline", "bump", "research", "plan", "fix", "verify", "pr"] as const;
+export const PIPELINE = ["prepare", "baseline", "bump", "research", "plan", "migrate", "fix", "verify", "pr"] as const;
 export type PipelineStep = (typeof PIPELINE)[number];
-export type NodeState = "pending" | "active" | "done" | "failed";
+export type NodeState = "pending" | "active" | "done" | "failed" | "skipped";
 
 export const STEP_LABEL: Record<PipelineStep, string> = {
   prepare: "Prepare", baseline: "Baseline", bump: "Bump", research: "Research",
-  plan: "Plan", fix: "Fix", verify: "Verify", pr: "PR",
+  plan: "Plan", migrate: "Migrate", fix: "Fix", verify: "Verify", pr: "PR",
 };
 
-const EXTRA_LABEL: Record<string, string> = { migrate: "Migrate", escalate: "Escalate" };
+const EXTRA_LABEL: Record<string, string> = { escalate: "Escalate" };
 
 export function stageLabel(name: string): string {
   return STEP_LABEL[name as PipelineStep] ?? EXTRA_LABEL[name] ?? name.charAt(0).toUpperCase() + name.slice(1);
 }
 
-/** Stages that render inside another pipeline node. */
-const NODE_OF: Record<string, PipelineStep> = { migrate: "fix" };
+/** "3 file(s) migrated; 5/13 baseline tests pass" -> "3 files · parallel" */
+export function migrateNote(detail: string | undefined): string | null {
+  const m = detail?.match(/(\d+)\s+file/);
+  if (!m) return null;
+  const n = Number(m[1]);
+  return `${n} ${n === 1 ? "file" : "files"} · parallel`;
+}
+
+export function isBudgetLog(msg: string): boolean {
+  return /budget/i.test(msg);
+}
 
 /** Rule ids worth showing as chips ("R12"), not placeholders like "bulk". */
 export function ruleChips(rule: string | undefined): string[] {
@@ -61,6 +70,8 @@ export interface Meter {
   state: MeterState;
   label: string;
   seq: number | null;
+  /** Set once the run has a result: the ring then shows the verdict, not progress. */
+  verdict?: RunStatus;
 }
 
 // ---------------- models ----------------
@@ -82,7 +93,7 @@ export interface ModelRow {
 export type FeedTone = "ok" | "err" | "warn" | "muted" | "accent" | "info";
 export type FeedIcon =
   | "stage" | "read_file" | "apply_patch" | "rewrite_file" | "run_tests" | "search_docs"
-  | "reinstall" | "finish" | "tool" | "tests" | "log" | "llm" | "tavily" | "pins" | "escalate" | "verify";
+  | "reinstall" | "finish" | "tool" | "tests" | "log" | "budget" | "llm" | "tavily" | "pins" | "escalate" | "verify";
 
 export interface FeedItem {
   id: number;
@@ -200,6 +211,11 @@ export function deriveRun(events: RunEvent[]): RunView {
         break;
       }
       case "log":
+        if (isBudgetLog(e.msg)) {
+          const [head, ...rest] = e.msg.split(/;\s*|:\s+/);
+          feed.push({ id: e.seq, t: e.t, icon: "budget", tone: "warn", title: head, detail: rest.join(" · ") || null, chips: ["budget"] });
+          break;
+        }
         feed.push({
           id: e.seq, t: e.t, icon: "log",
           tone: e.level === "error" ? "err" : e.level === "warn" || e.level === "warning" ? "warn" : "muted",
@@ -289,8 +305,8 @@ export function deriveRun(events: RunEvent[]): RunView {
         patches.push(e);
         feed.push({
           id: e.seq, t: e.t, icon: e.rewrite ? "rewrite_file" : "apply_patch", tone: "ok",
-          title: e.path, detail: null, added: e.added, removed: e.removed,
-          chips: e.rule === "bulk" ? ["bulk"] : ruleChips(e.rule),
+          title: e.rule === "bulk" ? `rewrote ${e.path} (bulk)` : e.path, detail: null, added: e.added, removed: e.removed,
+          chips: ruleChips(e.rule),
         });
         pendingPatchIdx = feed.length - 1;
         break;
@@ -369,7 +385,7 @@ export function deriveRun(events: RunEvent[]): RunView {
     }
     if (s.name === "fix" && s.status === "start") iterations += 1;
     const state: NodeState = s.status === "start" ? "active" : s.status === "done" ? "done" : "failed";
-    stageState.set(NODE_OF[s.name] ?? s.name, { state, t: s.t, detail: s.detail });
+    stageState.set(s.name, { state, t: s.t, detail: s.detail });
   }
 
   const status: ViewStatus = result ? result.status : events.length ? "running" : "pending";
@@ -396,6 +412,10 @@ export function deriveRun(events: RunEvent[]): RunView {
         t = result.t;
       } else if ((verify?.passed || writeStarted) && !result) state = "active";
     }
+    // Stages a run never entered although later work happened (older replays have no migrate stage,
+    // and a run that goes green after migrate never needs the fix loop).
+    if (key === "migrate" && state === "pending" && (stageState.has("fix") || verify || result)) state = "skipped";
+    if (key === "fix" && state === "pending" && (verify || result) && stageState.has("migrate")) state = "skipped";
     if (result && state === "active") state = terminalBad || result.status === "partial" ? "failed" : "done";
     return { key, label: STEP_LABEL[key], state, note: null, t };
   });
@@ -415,13 +435,23 @@ export function deriveRun(events: RunEvent[]): RunView {
   if (rulesCount != null || sources.length) note("research", `${rulesCount ?? "…"} rules · ${sources.length} src`);
   const lastPlan = plans[plans.length - 1];
   if (lastPlan) note("plan", `${lastPlan.steps.length} steps`);
-  if (iterations || stageState.has("fix")) {
+  const mig = stageState.get("migrate");
+  if (mig) note("migrate", migrateNote(mig.detail) ?? (mig.state === "active" ? "parallel…" : null));
+  if (iterations) {
     const lastFix = testsBy("fix");
-    note("fix", `${iterations ? `iter ${iterations}` : "migrate"}${lastFix ? ` · ${lastFix.passed}/${lastFix.total}` : ""}`);
+    note("fix", `iter ${iterations}${lastFix ? ` · ${lastFix.passed}/${lastFix.total}` : ""}`);
   }
   if (verify) note("verify", `${verify.checks.filter((c) => c.ok).length}/${verify.checks.length} checks`);
   if (result?.summary) note("pr", "written");
-  else if (nodes[7].state === "active") note("pr", "writing…");
+  else if (nodes.find((n) => n.key === "pr")?.state === "active") note("pr", "writing…");
+
+  // The ring follows the final verdict: partial is amber, failed/error red.
+  if (result && meter.state !== "import-error" && meter.state !== "idle") {
+    if (result.status === "partial") meter = { ...meter, state: "partial" };
+    else if (result.status === "failed" || result.status === "error") meter = { ...meter, state: "red" };
+    else if (result.status === "green") meter = { ...meter, state: "green" };
+    meter = { ...meter, verdict: result.status };
+  }
 
   // ----- models: always show the full lineup, in routing order -----
   const models: ModelRow[] = MODELS.map(

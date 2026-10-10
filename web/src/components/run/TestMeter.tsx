@@ -134,7 +134,9 @@ export const TestMeter = memo(function TestMeter({ meter, history, baselineTotal
       <div className="meter">
         <Ring meter={meter} />
         <div className="meter-side">
-          <div className={`meter-state st-${meter.state}`}>{STATE_TEXT[meter.state]}</div>
+          <div className={`meter-state st-${meter.state}`}>
+            {meter.verdict === "partial" ? "partial upgrade" : meter.verdict === "failed" || meter.verdict === "error" ? "upgrade failed" : STATE_TEXT[meter.state]}
+          </div>
           <div className="meter-summary mono">{last ? last.summary : baselineTotal == null ? "cloning and installing…" : ""}</div>
           <Cells meter={meter} />
           <div className="meter-spark-head">

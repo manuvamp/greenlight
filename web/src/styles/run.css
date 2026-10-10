@@ -382,7 +382,7 @@ a.rh-repo:hover {
 .timeline {
   position: relative;
   display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-columns: repeat(9, minmax(0, 1fr));
   padding: 18px 0 14px;
   margin-bottom: 14px;
   border-radius: 12px;
@@ -393,8 +393,8 @@ a.rh-repo:hover {
 .timeline-track {
   position: absolute;
   top: 35px;
-  left: calc(100% / 16);
-  right: calc(100% / 16);
+  left: calc(100% / 18);
+  right: calc(100% / 18);
   height: 2px;
   background: var(--border-2);
   border-radius: 2px;
@@ -1894,7 +1894,7 @@ a.source-card:hover {
   }
   .g-feed .panel { height: 440px; }
   .g-plan .panel { max-height: 600px; }
-  .timeline { grid-template-columns: repeat(4, 1fr); row-gap: 16px; }
+  .timeline { grid-template-columns: repeat(3, 1fr); row-gap: 16px; }
   .timeline-track { display: none; }
   .playback { flex-wrap: wrap; }
   .scrub { flex-basis: 100%; order: 5; }
@@ -1924,4 +1924,88 @@ a.source-card:hover {
 .diff-file > .diff-table {
   max-height: 560px;
   overflow: auto;
+}
+
+/* skipped stage (e.g. older replays without a migrate step) */
+.tl-skipped .tl-dot {
+  border-style: dashed;
+  border-color: var(--border-2);
+  color: var(--text-4);
+  background: transparent;
+}
+
+.tl-skipped .tl-label,
+.tl-skipped .tl-note {
+  color: var(--text-4);
+}
+
+.tl-skipped {
+  opacity: 0.7;
+}
+
+/* budget guard log lines */
+.kind-budget .feed-icon {
+  color: var(--amber);
+  border-color: var(--amber-line);
+  background: var(--amber-soft);
+  box-shadow: 0 0 10px -3px rgba(245, 181, 68, 0.6);
+}
+
+.kind-budget .feed-title {
+  color: #ffe2a8;
+  font-weight: 600;
+}
+
+.kind-budget .rule-chip {
+  color: var(--amber);
+  background: var(--amber-soft);
+  border-color: var(--amber-line);
+}
+
+/* long verify check names wrap instead of overflowing */
+.check-name {
+  overflow-wrap: anywhere;
+  line-height: 1.4;
+}
+
+.check-name code {
+  font-size: 11.5px;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: var(--panel-3);
+  border: 1px solid var(--border);
+}
+
+.check-detail {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* ring follows the verdict: partial amber, failed red */
+.ring.ring-partial .ring-green {
+  stroke: var(--amber);
+  filter: drop-shadow(0 0 6px rgba(245, 181, 68, 0.5));
+}
+
+.ring.ring-red .ring-green {
+  stroke: #ff9a9a;
+  filter: drop-shadow(0 0 6px rgba(240, 74, 74, 0.45));
+}
+
+.meter-panel.meter-partial {
+  border-color: rgba(245, 181, 68, 0.22);
+}
+
+.meter-partial .cell-ok {
+  background: var(--amber);
+  box-shadow: 0 0 6px -1px rgba(245, 181, 68, 0.8);
+}
+
+.markdown table {
+  display: table;
+  width: 100%;
+}
+
+.markdown td:not(:first-child) {
+  overflow-wrap: anywhere;
 }

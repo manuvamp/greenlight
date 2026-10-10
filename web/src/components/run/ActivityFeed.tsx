@@ -17,6 +17,7 @@ const ICON: Record<FeedIcon, IconName> = {
   tool: "wrench",
   tests: "flask",
   log: "terminal",
+  budget: "gauge",
   llm: "sparkles",
   tavily: "search",
   pins: "pin",

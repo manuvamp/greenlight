@@ -77,7 +77,8 @@ def _cases() -> list[dict]:
 
 
 def _latest_scoreboard() -> dict | None:
-    boards = sorted(RESULTS.glob("*/scoreboard.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+    # Only official eval runs (evals/results/eval-*), not one-off trials or prechecks.
+    boards = sorted(RESULTS.glob("eval-*/scoreboard.json"), key=lambda p: p.stat().st_mtime, reverse=True)
     return json.loads(boards[0].read_text(encoding="utf-8")) if boards else None
 
 

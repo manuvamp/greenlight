@@ -3,6 +3,16 @@ import type { VerifyEvent } from "../../types";
 import { Icon } from "../Icon";
 import { Panel } from "../ui";
 
+/** Render `code` spans inside check names. */
+function CheckName({ name }: { name: string }) {
+  const parts = name.split(/(`[^`]+`)/g);
+  return (
+    <span className="check-name">
+      {parts.map((p, i) => (p.startsWith("`") && p.endsWith("`") && p.length > 2 ? <code key={i}>{p.slice(1, -1)}</code> : p))}
+    </span>
+  );
+}
+
 const EXPECTED = [
   "baseline tests still pass",
   "target version is installed",
@@ -40,7 +50,7 @@ export const VerifyPanel = memo(function VerifyPanel({ verify, active }: { verif
                   <span className="check-icon">
                     <Icon name={c.ok ? "check" : state === "warn" ? "alert" : "x"} size={12} stroke={2.6} />
                   </span>
-                  <span className="check-name">{c.name}</span>
+                  <CheckName name={c.name} />
                   <span className="check-detail mono" title={c.detail}>{c.detail}</span>
                 </li>
               );

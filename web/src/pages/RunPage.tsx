@@ -32,11 +32,19 @@ function FinalBanner({ v }: { v: RunView }) {
   return (
     <div className={`final-banner fb-${r.status}`} role="status">
       <span className="fb-mark">{mark}</span>
-      <span className="fb-status">{r.status.toUpperCase()}</span>
+      <span className="fb-status">{r.status.toUpperCase()}:</span>
       <span className="fb-text">
-        <span className="mono">{versions}</span>
-        {finText && <>, {finText}</>}
-        {r.status !== "green" && r.headline && <span className="fb-headline"> · {r.headline}</span>}
+        {r.status === "green" ? (
+          <>
+            <span className="mono">{versions}</span>
+            {finText && <>, {finText}</>}
+          </>
+        ) : (
+          <>
+            {finText ?? r.headline}
+            {(v.fromVersion || v.toVersion) && <span className="fb-headline"> · <span className="mono">{versions}</span></span>}
+          </>
+        )}
       </span>
       <span className="fb-stats mono">
         <span>{fmtUsd(r.usd ?? v.usd)}</span>
