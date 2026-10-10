@@ -54,7 +54,10 @@ Agents under pressure delete tests, skip them, pin the old version back, or hide
 - every test that passed at baseline still passes
 - the target major version is actually installed
 - the upgrade pin is still in the manifests (rolling it back is refused at edit time)
-- no test files were edited (refused at edit time)
+- tests are the contract: a test file may be edited only to follow a renamed/moved API it uses directly
+  (e.g. `from pydantic import BaseSettings`). Every assertion, `pytest.raises`, test function and marker
+  must survive (an edit that deletes or weakens one is refused at edit time and re-audited from git)
+- no module named after the library (a fake `pydantic.py` that hijacks the import is refused)
 - the test count didn't drop, and no test is newly skipped
 - no compatibility shims (e.g. `pydantic.v1`)
 - no new `type: ignore` / `noqa` / bare `except: pass` (reported)
