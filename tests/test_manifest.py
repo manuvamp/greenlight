@@ -66,3 +66,19 @@ def test_unpinned_name_gets_constraint():
 def test_mentions():
     assert mentions("pydantic==1.10", "pydantic")
     assert not mentions("pydantic-settings==1.0", "pydantic")
+
+
+def test_keywords_and_classifiers_untouched():
+    src = ('[project]\nkeywords = ["hashicorp", "pydantic"]\n'
+           'dependencies = [\n  "pydantic",\n  "hvac>=0.10",\n]\n')
+    out, ch = bump_text(src, "pydantic", SPEC, "pyproject.toml")
+    assert 'keywords = ["hashicorp", "pydantic"]' in out
+    assert '"pydantic>=2,<3"' in out
+    assert len(ch) == 1
+
+
+def test_setup_py_keywords_untouched():
+    src = 'setup(keywords=["pydantic", "vault"], install_requires=["pydantic", "hvac"])'
+    out, ch = bump_text(src, "pydantic", SPEC, "setup.py")
+    assert 'keywords=["pydantic", "vault"]' in out
+    assert 'install_requires=["pydantic>=2,<3", "hvac"]' in out

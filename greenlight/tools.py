@@ -28,6 +28,13 @@ def is_test_file(path: str) -> bool:
     return bool(TEST_PATH.search(path.replace("\\", "/")))
 
 
+def shadows_library(path: str, lib: str) -> bool:
+    """A file or package named after the upgraded library would hijack `import <lib>`: a fake upgrade."""
+    mod = re.sub(r"[-.]", "_", lib).lower()
+    parts = [p.lower() for p in norm_path(path).split("/")]
+    return parts[-1] in (f"{mod}.py", f"{mod}.pyi") or mod in parts[:-1]
+
+
 def norm_path(path: str) -> str:
     """Repo-relative path, whatever form the model used."""
     return path.replace("\\", "/").removeprefix("/repo/").removeprefix("./").lstrip("/")
@@ -184,6 +191,9 @@ class ToolBox:
         if search == "":
             if current is not None:
                 return "ERROR: file exists; give a non-empty `search` snippet to edit it"
+            if shadows_library(path, self.lib):
+                return (f"REFUSED: {path} would shadow the real `{self.lib}` package. Migrate the code to the "
+                        f"new {self.lib} API instead of faking the old one.")
             new = replace
         else:
             if current is None:

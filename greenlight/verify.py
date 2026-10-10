@@ -9,7 +9,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from .tools import is_test_file
+from .tools import is_test_file, shadows_library
 from .workspace import TestRun, Workspace
 
 SUPPRESSIONS = [
@@ -71,6 +71,9 @@ def verify(ws: Workspace, baseline: TestRun, final: TestRun, lib: str, to_major:
               "; ".join(rollback) if rollback else ("; ".join(pins[:4]) or "no manifest pins")))
 
     changed = ws.changed_files()
+    shadows = [f for f in changed if shadows_library(f, lib)]
+    add(Check(f"no module shadows `{lib}`", not shadows, ", ".join(shadows) or "none"))
+
     touched_tests = [f for f in changed if is_test_file(f)]
     add(Check("no test files edited", allow_test_edits or not touched_tests,
               ", ".join(touched_tests) or "none",

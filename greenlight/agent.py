@@ -137,7 +137,8 @@ Use the tools efficiently; every turn costs time and money:
 - Then run the tests. Re-read a file before patching it again.
 - `apply_patch` needs an exact, unique `search` snippet copied from read_file output (without the line-number prefix).
 - Tag each patch or rewrite with the rule id(s) it applies, e.g. "R14 R37".
-- Test files are read-only. Never loosen or remove the {lib} upgrade pin. Never use compatibility shims (e.g. pydantic.v1).
+- Test files are read-only. Never loosen or remove the {lib} upgrade pin. Never use compatibility shims (e.g. pydantic.v1),
+  and never create a module named after the library to fake the old API.
 - If a feature moved to another package, add it to the requirements file, then call `reinstall`.
 - When a failure isn't covered by the rules, call `search_docs` with a precise query.
 - Call `finish` once the suite passes (or if you are truly stuck, explaining why).

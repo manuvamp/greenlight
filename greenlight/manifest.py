@@ -60,7 +60,11 @@ def bump_text(text: str, lib: str, new_spec: str, filename: str = "") -> tuple[s
 
     # Quoted requirement strings: setup.py, PEP 621 arrays, setup.cfg doesn't quote (handled below)
     def quoted(m: re.Match) -> str:
-        q, nm, extras, marker = m.group(1), m.group(2), m.group(3) or "", m.group(5) or ""
+        q, nm, extras, spec, marker = m.group(1), m.group(2), m.group(3) or "", m.group(4), m.group(5) or ""
+        # A bare quoted name ("pydantic") is only a requirement inside a dependency list;
+        # elsewhere it's a keyword, a classifier, a module name in a string...
+        if not spec and not _in_dependency_list(m.string, m.start()):
+            return m.group(0)
         return record(m.group(0), f"{q}{nm}{extras}{new_spec}{marker}{q}")
 
     text = re.sub(
@@ -79,6 +83,24 @@ def bump_text(text: str, lib: str, new_spec: str, filename: str = "") -> tuple[s
             line, text,
         )
     return text, changes
+
+
+DEPENDENCY_KEYS = {"install_requires", "dependencies", "requires", "extras_require", "optional-dependencies",
+                   "tests_require", "setup_requires", "dev-dependencies", "dev", "test", "tests", "testing",
+                   "all", "extra-dependencies"}
+
+
+def _in_dependency_list(text: str, pos: int) -> bool:
+    """Is position `pos` inside the value of a dependency-ish key (`install_requires=[...`, `dependencies = [...`)?"""
+    head = text[max(0, pos - 4000):pos]
+    keys = list(re.finditer(r"['\"]?([A-Za-z_][\w-]*)['\"]?\s*[=:]\s*[\[\({]", head))
+    if not keys:
+        return False
+    last = keys[-1]
+    # the list must still be open at pos
+    tail = head[last.end():]
+    depth = 1 + sum(tail.count(c) for c in "[({") - sum(tail.count(c) for c in "])}")
+    return depth > 0 and last.group(1).lower() in DEPENDENCY_KEYS
 
 
 def mentions(text: str, lib: str) -> bool:
