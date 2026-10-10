@@ -25,13 +25,14 @@ from .manifest import requirement_spec
 from .models import Role
 from .research import Researcher, RuleSheet
 from .tools import READ_MARK, SCHEMAS, ToolBox, is_test_file, norm_path
-from .triage import group_failures, render
+from .triage import _trim_trace, group_failures, render
 from .verify import VerifyReport, verify
 from .workspace import TestRun, Workspace
 
 PYTHON_FALLBACKS = ["3.11", "3.10", "3.12", "3.9"]
 MAX_PROMPT_RULES = 40
 BULK_MAX_FILES = 16
+REPAIR_ROUNDS = 3
 BULK_MAX_LINES = 700
 
 BULK_SYSTEM = """You migrate ONE file of a project whose dependency `{lib}` was upgraded {from_v} → {to_v} ({spec}).
@@ -454,6 +455,44 @@ class Upgrader:
                 res.patches = [p.__dict__ for p in tb.patches]
                 return current
 
+            # Repair rounds: rewrite the files the failures point at, one shot each, while it helps.
+            for rnd in range(1, REPAIR_ROUNDS + 1):
+                if baseline.passed <= current.passed or self._budget_low():
+                    break
+                fmap = self._files_from_failures(ws, current)
+                _, rules_txt = self._relevant_rules(ws, sheet, failures)
+                still = {site.split(":", 1)[0] for sites in self._rule_hits.values() for site in sites}
+                targets = list(fmap) + [f for f in sorted(still) if f not in fmap and not is_test_file(f)]
+                targets = targets[:BULK_MAX_FILES]
+                if not targets:
+                    break
+                before = {f: ws.sb.read_file(f) for f in targets if ws.sb.exists(f)}
+                kept_before, sig_before = len(baseline.passed & current.passed), _failure_signature(current)
+                self.ev.stage("repair", detail=f"round {rnd}: rewriting {len(targets)} file(s) with their failures")
+                n = self._bulk_migrate(ws, plan, sheet, tb, targets=targets, failures=fmap, label=f"repair{rnd}")
+                if not n:
+                    self.ev.stage("repair", "done", detail=f"round {rnd}: nothing changed")
+                    break
+                if any(not p.path.endswith(".py") and p.rule == f"repair{rnd}" for p in tb.patches):
+                    tb.t_reinstall()
+                failures = run_tests_tool("")
+                kept = len(baseline.passed & current.passed)
+                if kept < kept_before:
+                    # The round made things worse: put those files back and stop rewriting.
+                    for f, text in before.items():
+                        ws.sb.write_file(f, text)
+                    failures = run_tests_tool("")
+                    self.ev.stage("repair", "done", detail=f"round {rnd}: regressed ({kept} < {kept_before}); reverted")
+                    break
+                self.ev.stage("repair", "done", detail=f"round {rnd}: {n} file(s) rewritten; "
+                              f"{kept}/{len(baseline.passed)} baseline tests pass")
+                if kept == kept_before and _failure_signature(current) == sig_before:
+                    break
+            if baseline.passed <= current.passed:
+                res.patches = [p.__dict__ for p in tb.patches]
+                return current
+            progress = ws.diff()
+
         tiers = _editor_tiers(s.editor)
         tier = 0
         best_kept = len(baseline.passed & current.passed)
@@ -561,9 +600,14 @@ class Upgrader:
                 out.append(f)
         return out[:BULK_MAX_FILES]
 
-    def _bulk_migrate(self, ws: Workspace, plan: dict, sheet: RuleSheet, tb: ToolBox) -> int:
+    def _bulk_migrate(self, ws: Workspace, plan: dict, sheet: RuleSheet, tb: ToolBox,
+                      targets: list[str] | None = None, failures: dict[str, str] | None = None,
+                      label: str = "bulk") -> int:
+        """Rewrite whole files in one call each, in parallel. With `failures`, each file also gets the
+        test failures that point at it (repair rounds). Returns the number of files rewritten."""
         s = self.spec
-        targets = self._bulk_targets(ws, plan)
+        targets = targets if targets is not None else self._bulk_targets(ws, plan)
+        failures = failures or {}
         by_id = {r.id: r for r in sheet.rules}
 
         def one(path: str) -> tuple[str, str, str] | None:
@@ -585,6 +629,8 @@ class Upgrader:
                     {"role": "user", "content":
                         f"Planned changes for this file: {json.dumps(steps)}\n"
                         + (f"Dependency changes in the plan: {json.dumps(deps)}\n" if deps and not path.endswith('.py') else "")
+                        + (f"\nTests still failing because of this file (fix these):\n{failures[path]}\n"
+                           if failures.get(path) else "")
                         + f"\nFile `{path}`:\n```\n{current}\n```"}]
             budget = min(16000, int(len(current) / 2.5) + 1000)
 
@@ -622,16 +668,38 @@ class Upgrader:
             for fut in [pool.submit(one, p) for p in targets]:
                 try:
                     out = fut.result()
-                except (LLMError, OSError) as e:
-                    self.ev.log(f"bulk rewrite failed: {e}")
+                except (LLMError, OSError, BudgetExceeded) as e:
+                    self.ev.log(f"{label} rewrite failed: {e}")
                     out = None
                 if out:
                     results.append(out)
+        done = 0
         for path, current, new in results:
-            msg = tb.t_rewrite_file(path, new, rule="bulk")
-            if not msg.startswith("OK"):
-                self.ev.log(f"bulk rewrite of {path}: {msg}")
-        return sum(1 for p in tb.patches if p.rule == "bulk")
+            msg = tb.t_rewrite_file(path, new, rule=label)
+            if msg.startswith("OK"):
+                done += 1
+            else:
+                self.ev.log(f"{label} rewrite of {path}: {msg.splitlines()[0]}")
+        return done
+
+    def _files_from_failures(self, ws: Workspace, run: TestRun) -> dict[str, str]:
+        """Repo files that appear in failing tracebacks, each with the trimmed failures that mention it."""
+        repo_files = set(ws.sb.run("git ls-files", timeout=60).stdout.split())
+        texts = list(run.failures.values()) + ([run.collection_error] if run.collection_error else [])
+        out: dict[str, list[str]] = {}
+        for text in texts:
+            snippet = _trim_trace(text, 1200)
+            for m in re.finditer(r"(?:/repo/)?((?:[\w.-]+/)*[\w.-]+\.py):\d+", text):
+                path = norm_path(m.group(1))
+                if path not in repo_files:
+                    continue
+                if is_test_file(path) and not (self.spec.test_policy == "audited"
+                                               and self.spec.lib.lower() in snippet.lower()):
+                    continue
+                bucket = out.setdefault(path, [])
+                if snippet not in bucket and sum(map(len, bucket)) < 3000:
+                    bucket.append(snippet)
+        return {p: "\n---\n".join(v) for p, v in out.items()}
 
     def _editor_messages(self, plan: dict, failures: str, rules_txt: str, progress: str = "") -> list[dict]:
         s = self.spec
