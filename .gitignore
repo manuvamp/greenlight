@@ -22,3 +22,4 @@ docs/video/*.mp4
 docs/video/project/node_modules/
 docs/video/project/renders/
 *.mp4
+docs/video/
