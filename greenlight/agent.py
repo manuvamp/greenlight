@@ -32,7 +32,7 @@ from .workspace import TestRun, Workspace
 PYTHON_FALLBACKS = ["3.11", "3.10", "3.12", "3.9"]
 MAX_PROMPT_RULES = 40
 BULK_MAX_FILES = 16
-REPAIR_ROUNDS = 3
+REPAIR_ROUNDS = 8
 BULK_MAX_LINES = 700
 
 BULK_SYSTEM = """You migrate ONE file of a project whose dependency `{lib}` was upgraded {from_v} → {to_v} ({spec}).
@@ -458,13 +458,18 @@ class Upgrader:
                 return current
 
             # Repair rounds: rewrite the files the failures point at, one shot each, while it helps.
+            # Import errors surface one at a time, so "the error changed" counts as progress even when
+            # no test passes yet; a signature we've already seen means we're going in circles.
+            seen_sigs = {_failure_signature(current)}
+            unchanged: set[str] = set()
             for rnd in range(1, REPAIR_ROUNDS + 1):
                 if baseline.passed <= current.passed or self._budget_low():
                     break
                 fmap = self._files_from_failures(ws, current)
                 _, rules_txt = self._relevant_rules(ws, sheet, failures)
                 still = {site.split(":", 1)[0] for sites in self._rule_hits.values() for site in sites}
-                targets = list(fmap) + [f for f in sorted(still) if f not in fmap and not is_test_file(f)]
+                targets = list(fmap) + [f for f in sorted(still)
+                                        if f not in fmap and not is_test_file(f) and f not in unchanged]
                 targets = targets[:BULK_MAX_FILES]
                 if not targets:
                     break
@@ -477,6 +482,7 @@ class Upgrader:
                     break
                 if any(not p.path.endswith(".py") and p.rule == f"repair{rnd}" for p in tb.patches):
                     tb.t_reinstall()
+                unchanged |= {f for f in targets if f in before and ws.sb.read_file(f) == before[f]}
                 failures = run_tests_tool("")
                 kept = len(baseline.passed & current.passed)
                 if kept < kept_before:
@@ -488,8 +494,11 @@ class Upgrader:
                     break
                 self.ev.stage("repair", "done", detail=f"round {rnd}: {n} file(s) rewritten; "
                               f"{kept}/{len(baseline.passed)} baseline tests pass")
-                if kept == kept_before and _failure_signature(current) == sig_before:
+                sig = _failure_signature(current)
+                if kept == kept_before and (sig == sig_before or sig in seen_sigs):
+                    self.ev.log(f"repair round {rnd} made no new progress; handing over to the tool loop")
                     break
+                seen_sigs.add(sig)
             if baseline.passed <= current.passed:
                 res.patches = [p.__dict__ for p in tb.patches]
                 return current
