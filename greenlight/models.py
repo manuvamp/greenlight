@@ -60,6 +60,10 @@ THINKING: dict[Role, bool] = {
 }
 
 
+# The editor runs as a cascade: start cheap, move up a tier each time progress stalls.
+EDIT_CASCADE = [LIGHTNING, SUPER, ULTRA]
+
+
 def route(role: Role, override: str | None = None) -> Model:
     """Model for a role. `override` (a model id) forces one model, e.g. for the all-Ultra ablation."""
     if override:

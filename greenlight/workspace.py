@@ -103,6 +103,7 @@ class Workspace:
             if not r.ok:
                 raise RuntimeError(f"git checkout {ref} failed: {r.output[-2000:]}")
         self.sb.run("git checkout -q -b greenlight/upgrade", timeout=60)
+        self.ignore_junk()
 
     def upload(self, local_dir: str) -> None:
         """Copy a local folder in as a fresh git repo (used for examples and local projects)."""
@@ -120,6 +121,13 @@ class Workspace:
                         cwd="/", timeout=120)
         if not r.ok:
             raise RuntimeError(f"upload failed: {r.output[-2000:]}")
+        self.ignore_junk()
+
+    def ignore_junk(self) -> None:
+        """Keep build/test byproducts out of the diff without touching the repo's own .gitignore."""
+        self.sb.run("mkdir -p .git/info && printf '%s\\n' '__pycache__/' '*.pyc' '.pytest_cache/' "
+                    "'*.egg-info/' 'build/' '.eggs/' '.coverage' 'coverage.xml' 'htmlcov/' "
+                    ">> .git/info/exclude", timeout=30)
 
     def head(self) -> str:
         return self.sb.run("git rev-parse HEAD", timeout=30).stdout.strip()
@@ -226,7 +234,7 @@ class Workspace:
         if select:
             cmd += " " + " ".join(shlex.quote(s) for s in select)
         self.sb.run(f"rm -f {JUNIT}", timeout=30)
-        r = self.sb.run(cmd, timeout=timeout)
+        r = self.sb.run(cmd, timeout=timeout, env={"PYTHONDONTWRITEBYTECODE": "1"})
         xml = ""
         try:
             xml = self.sb.read_file(JUNIT)

@@ -113,8 +113,9 @@ class LLM:
         temperature: float | None = None,
         json_mode: bool = False,
         retries: int = 2,
+        model_id: str | None = None,
     ) -> LLMResult:
-        model = route(role, self.model_override)
+        model = route(role, self.model_override or model_id)
         think = THINKING[role] if thinking is None else thinking
         last_err: Exception | None = None
         for attempt in range(retries + 1):

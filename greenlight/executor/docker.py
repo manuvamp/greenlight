@@ -30,6 +30,11 @@ class DockerSandbox(Sandbox):
 
     def run(self, command: str, *, timeout: int = 600, cwd: str | None = None,
             env: dict[str, str] | None = None) -> ExecResult:
+        if len(command) > 6000:
+            # Windows caps a command line at ~32k chars: ship long scripts as a file instead.
+            script = f"/tmp/gl-cmd-{uuid.uuid4().hex[:8]}.sh"
+            self.write_file(script, command)
+            command = f"bash {script}; rc=$?; rm -f {script}; exit $rc"
         args = ["exec", "-w", cwd or self.workdir]
         for k, v in (env or {}).items():
             args += ["-e", f"{k}={v}"]
