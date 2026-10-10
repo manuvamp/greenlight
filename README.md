@@ -135,7 +135,7 @@ We route each job to the cheapest model that does it well. Every call goes throu
 Requirements: Python 3.11+, Docker, a Nebius Token Factory API key, and a Tavily API key.
 
 ```bash
-git clone <this repo> && cd greenlight
+git clone https://github.com/manuvamp/greenlight && cd greenlight
 uv venv && uv pip install -e ".[dev]"
 cp .env.example .env            # add NEBIUS_API_KEY and TAVILY_API_KEY
 docker build -t greenlight-runner runner/
