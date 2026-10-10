@@ -1,0 +1,11 @@
+.env
+*.secret
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.greenlight/
+node_modules/
+web/dist/
+runs/
+scripts/*.out.json
