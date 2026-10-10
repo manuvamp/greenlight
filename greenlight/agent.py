@@ -169,6 +169,11 @@ class Upgrader:
     def _elapsed_min(self) -> float:
         return (time.monotonic() - self.t0) / 60
 
+    def _budget_low(self, frac: float = 0.85) -> bool:
+        """Leave headroom so a run that runs low can still re-test, verify and write its PR."""
+        spent = sum(c["usd"] for c in self.calls)
+        return spent >= frac * self.budget.caps.usd_per_run
+
     # ------------------------------------------------------------------
 
     def run(self) -> RunResult:
@@ -443,12 +448,22 @@ class Upgrader:
             editor = tiers[tier]
             self.ev.stage("fix", detail=f"iteration {it} · editor {editor.label}")
             tb.finished = None
+            out_of_budget = False
             for _ in range(s.steps_per_iteration):
                 if self._elapsed_min() > s.max_minutes:
                     self.ev.log("time limit reached")
                     break
-                r = self.llm.chat(Role.EDIT, _trim_history(messages), run=self.run_id, tools=SCHEMAS,
-                                  max_tokens=4096, temperature=0.2, model_id=editor.id)
+                if self._budget_low():
+                    self.ev.log("run budget nearly used; stopping the fix loop to verify and report")
+                    out_of_budget = True
+                    break
+                try:
+                    r = self.llm.chat(Role.EDIT, _trim_history(messages), run=self.run_id, tools=SCHEMAS,
+                                      max_tokens=4096, temperature=0.2, model_id=editor.id)
+                except BudgetExceeded as e:
+                    self.ev.log(f"budget guard: {e}; stopping the fix loop to verify and report")
+                    out_of_budget = True
+                    break
                 messages.append(_assistant_msg(r))
                 if not r.tool_calls:
                     messages.append({"role": "user", "content": "Use the tools to continue, or call finish."})
@@ -459,6 +474,7 @@ class Upgrader:
                     if out.startswith(("OK: patched", "OK: rewrote")):
                         _drop_stale_reads(messages, fn.get("arguments") or "{}")
                     messages.append({"role": "tool", "tool_call_id": tc["id"], "content": out})
+                _compact_tool_args(messages[-1 - len(r.tool_calls)])
                 if tb.finished is not None:
                     break
             # Always judge by a fresh full run, not the model's word.
@@ -467,7 +483,7 @@ class Upgrader:
             self.ev.stage("fix", "done", detail=f"iteration {it}: {kept}/{len(baseline.passed)} baseline tests pass")
             if baseline.passed <= current.passed:
                 break
-            if self._elapsed_min() > s.max_minutes:
+            if self._elapsed_min() > s.max_minutes or out_of_budget or self._budget_low():
                 break
             # Progress = more baseline tests pass, or the failures changed (e.g. an import error that
             # hid the whole suite is gone). Only a run that changes nothing counts as a stall.
@@ -656,16 +672,41 @@ def _drop_stale_reads(messages: list[dict], args_json: str) -> None:
             m["content"] = f"{READ_MARK}{path}: (outdated copy removed; the file has changed since. Re-read it if needed.)"
 
 
-def _trim_history(messages: list[dict], budget_chars: int = 45_000) -> list[dict]:
+def _compact_tool_args(assistant_msg: dict) -> None:
+    """Once a write has executed, the model doesn't need the full file it sent sitting in history."""
+    for tc in assistant_msg.get("tool_calls") or []:
+        fn = tc["function"]
+        if fn["name"] not in ("rewrite_file", "apply_patch"):
+            continue
+        try:
+            args = json.loads(fn.get("arguments") or "{}")
+        except json.JSONDecodeError:
+            continue
+        if fn["name"] == "rewrite_file" and len(args.get("content", "")) > 300:
+            args["content"] = f"<{len(args['content'].splitlines())} lines written; re-read the file to see it>"
+        for k in ("search", "replace"):
+            if len(args.get(k, "")) > 600:
+                args[k] = args[k][:250] + " … " + args[k][-250:]
+        fn["arguments"] = json.dumps(args)
+
+
+def _msg_chars(m: dict) -> int:
+    n = len(m.get("content") or "")
+    for tc in m.get("tool_calls") or []:
+        n += len(tc["function"].get("arguments") or "")
+    return n
+
+
+def _trim_history(messages: list[dict], budget_chars: int = 40_000) -> list[dict]:
     """Shrink old tool outputs once the conversation grows, keeping the recent ones intact."""
-    total = sum(len(m.get("content") or "") for m in messages)
+    total = sum(_msg_chars(m) for m in messages)
     if total <= budget_chars:
         return messages
     out = [dict(m) for m in messages]
-    for m in out[2:-8]:
+    for m in out[2:-6]:
         if m["role"] == "tool" and len(m.get("content") or "") > 400:
+            total -= len(m["content"]) - 300
             m["content"] = m["content"][:300] + "\n… (older output trimmed)"
-            total = sum(len(x.get("content") or "") for x in out)
             if total <= budget_chars:
                 break
     return out

@@ -175,7 +175,7 @@ class Workspace:
         if self.dev_deps:
             self.log(f"test/dev dependencies: {', '.join(self.dev_deps)}")
             cmds.append(_tolerant_install(self.dev_deps))
-        cmds.append(f"uv pip install --python {PY} pytest pytest-timeout")
+        cmds.append(f"uv pip install --python {PY} 'pytest>=7' pytest-timeout")
         if self.extra_deps:
             cmds.append(f"uv pip install --python {PY} " + " ".join(shlex.quote(d) for d in self.extra_deps))
 

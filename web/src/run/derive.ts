@@ -19,6 +19,20 @@ export const STEP_LABEL: Record<PipelineStep, string> = {
   plan: "Plan", fix: "Fix", verify: "Verify", pr: "PR",
 };
 
+const EXTRA_LABEL: Record<string, string> = { migrate: "Migrate", escalate: "Escalate" };
+
+export function stageLabel(name: string): string {
+  return STEP_LABEL[name as PipelineStep] ?? EXTRA_LABEL[name] ?? name.charAt(0).toUpperCase() + name.slice(1);
+}
+
+/** Stages that render inside another pipeline node. */
+const NODE_OF: Record<string, PipelineStep> = { migrate: "fix" };
+
+/** Rule ids worth showing as chips ("R12"), not placeholders like "bulk". */
+export function ruleChips(rule: string | undefined): string[] {
+  return (rule ?? "").split(/\s+/).filter((r) => /^[A-Za-z]{0,3}\d+[a-z]?$/.test(r));
+}
+
 export interface StageNode {
   key: PipelineStep;
   label: string;
@@ -175,9 +189,9 @@ export function deriveRun(events: RunEvent[]): RunView {
         if (e.name === "escalate") {
           feed.push({ id: e.seq, t: e.t, icon: "escalate", tone: "warn", title: "Escalated", detail: e.detail ?? null });
         } else if (e.status === "start") {
-          feed.push({ id: e.seq, t: e.t, icon: "stage", tone: "accent", title: `${STEP_LABEL[e.name as PipelineStep] ?? e.name}`, detail: e.detail ?? null });
+          feed.push({ id: e.seq, t: e.t, icon: "stage", tone: "accent", title: stageLabel(e.name), detail: e.detail ?? null });
         } else if (e.status === "fail") {
-          feed.push({ id: e.seq, t: e.t, icon: "stage", tone: "err", title: `${STEP_LABEL[e.name as PipelineStep] ?? e.name} failed`, detail: e.detail ?? null });
+          feed.push({ id: e.seq, t: e.t, icon: "stage", tone: "err", title: `${stageLabel(e.name)} failed`, detail: e.detail ?? null });
         }
         if (e.name === "research" && e.status === "done" && rulesCount == null && e.detail) {
           const m = e.detail.match(/(\d+)\s+rules?/);
@@ -276,7 +290,7 @@ export function deriveRun(events: RunEvent[]): RunView {
         feed.push({
           id: e.seq, t: e.t, icon: e.rewrite ? "rewrite_file" : "apply_patch", tone: "ok",
           title: e.path, detail: null, added: e.added, removed: e.removed,
-          chips: e.rule ? e.rule.split(/\s+/).filter(Boolean) : [],
+          chips: e.rule === "bulk" ? ["bulk"] : ruleChips(e.rule),
         });
         pendingPatchIdx = feed.length - 1;
         break;
@@ -297,7 +311,7 @@ export function deriveRun(events: RunEvent[]): RunView {
         let detail: string | null = e.brief || null;
         let tone: FeedTone = "muted";
         if (e.name === "read_file") {
-          title = r.text.replace(/^(.*?)\s*\(lines/, "$1 (lines") || e.brief;
+          title = r.text.replace(/^FILE\s+/i, "") || e.brief;
           detail = null;
         } else if (e.name === "finish") {
           title = "Editor finished";
@@ -355,7 +369,7 @@ export function deriveRun(events: RunEvent[]): RunView {
     }
     if (s.name === "fix" && s.status === "start") iterations += 1;
     const state: NodeState = s.status === "start" ? "active" : s.status === "done" ? "done" : "failed";
-    stageState.set(s.name, { state, t: s.t, detail: s.detail });
+    stageState.set(NODE_OF[s.name] ?? s.name, { state, t: s.t, detail: s.detail });
   }
 
   const status: ViewStatus = result ? result.status : events.length ? "running" : "pending";
@@ -401,9 +415,9 @@ export function deriveRun(events: RunEvent[]): RunView {
   if (rulesCount != null || sources.length) note("research", `${rulesCount ?? "…"} rules · ${sources.length} src`);
   const lastPlan = plans[plans.length - 1];
   if (lastPlan) note("plan", `${lastPlan.steps.length} steps`);
-  if (iterations) {
+  if (iterations || stageState.has("fix")) {
     const lastFix = testsBy("fix");
-    note("fix", `iter ${iterations}${lastFix ? ` · ${lastFix.passed}/${lastFix.total}` : ""}`);
+    note("fix", `${iterations ? `iter ${iterations}` : "migrate"}${lastFix ? ` · ${lastFix.passed}/${lastFix.total}` : ""}`);
   }
   if (verify) note("verify", `${verify.checks.filter((c) => c.ok).length}/${verify.checks.length} checks`);
   if (result?.summary) note("pr", "written");

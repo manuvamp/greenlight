@@ -3,6 +3,7 @@ import type { PatchEvent, PinChange } from "../../types";
 import { parseDiff, patchLines, rawDiffLines } from "../../run/diff";
 import type { DiffFile, DiffLine } from "../../run/diff";
 import { fmtClock } from "../../format";
+import { ruleChips } from "../../run/derive";
 import { Icon } from "../Icon";
 import { Empty, Panel } from "../ui";
 
@@ -98,20 +99,22 @@ export function DiffViewer({ diff }: { diff: string }) {
   );
 }
 
-function PatchCard({ p, index }: { p: PatchEvent; index: number }) {
-  const [open, setOpen] = useState(true);
+function PatchCard({ p, index, defaultOpen }: { p: PatchEvent; index: number; defaultOpen: boolean }) {
+  const [userOpen, setUserOpen] = useState<boolean | null>(null);
+  const open = userOpen ?? defaultOpen;
+  const setOpen = (f: (o: boolean) => boolean) => setUserOpen(f(open));
   const lines = useMemo(
     () => (p.rewrite && p.diff ? rawDiffLines(p.diff) : patchLines(p.search, p.replace)),
     [p],
   );
-  const rules = p.rule ? p.rule.split(/\s+/).filter(Boolean) : [];
+  const rules = ruleChips(p.rule);
   return (
     <div className={`diff-file patch-card${open ? " is-open" : ""}`}>
       <button className="diff-file-head" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
         <Icon name="chevronRight" size={14} className="diff-chev" />
         <span className="patch-idx mono">#{index + 1}</span>
         <span className="diff-path mono">{p.path}</span>
-        {p.rewrite && <span className="fs-badge fs-renamed">rewrite</span>}
+        {p.rewrite && <span className="fs-badge">{p.rule === "bulk" ? "bulk rewrite" : "rewrite"}</span>}
         <span className="patch-rules">
           {rules.slice(0, 4).map((r) => <span key={r} className="rule-chip mono">{r}</span>)}
           {rules.length > 4 && <span className="rule-chip rule-more mono">+{rules.length - 4}</span>}
@@ -175,8 +178,8 @@ export const ChangesPanel = memo(function ChangesPanel({
           <div className="diff-summary mono">
             <span>{patches.length} {patches.length === 1 ? "patch" : "patches"} · newest first</span>
           </div>
-          {recent.slice(0, 40).map((p) => (
-            <PatchCard key={p.seq} p={p} index={patches.indexOf(p)} />
+          {recent.slice(0, 40).map((p, i) => (
+            <PatchCard key={p.seq} p={p} index={patches.length - 1 - i} defaultOpen={i < 3} />
           ))}
         </div>
       )}

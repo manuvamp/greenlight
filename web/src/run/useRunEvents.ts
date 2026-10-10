@@ -18,6 +18,7 @@ export type LoadState = "loading" | "ready" | "error";
 export interface RunPlayback {
   source: RunSource;
   events: RunEvent[];
+  all: RunEvent[];
   total: number;
   loadState: LoadState;
   error: string | null;
@@ -234,7 +235,7 @@ export function useRunEvents(source: RunSource, initialSpeed: Speed = 8): RunPla
   }, [playing, pause, play]);
 
   return {
-    source, events, total: all.length, loadState, error, playing: isReplay ? playing && !ended : !liveDone,
+    source, events, all, total: all.length, loadState, error, playing: isReplay ? playing && !ended : !liveDone,
     ended, speed, clock, duration: isReplay ? duration : Math.max(duration, clock), play, pause, toggle, restart, seek, setSpeed,
   };
 }

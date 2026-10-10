@@ -2,7 +2,7 @@
 // Every run event has seq, t (seconds since start) and type.
 
 export type RunStatus = "green" | "partial" | "failed" | "error" | "noop";
-export type StageName = "prepare" | "baseline" | "bump" | "research" | "plan" | "fix" | "escalate";
+export type StageName = "prepare" | "baseline" | "bump" | "research" | "plan" | "migrate" | "fix" | "escalate" | (string & {});
 export type StageStatus = "start" | "done" | "fail";
 export type LlmRole = "plan" | "escalate" | "edit" | "triage" | "digest" | "write";
 

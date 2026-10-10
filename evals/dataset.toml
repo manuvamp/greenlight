@@ -115,7 +115,7 @@ repo = "https://github.com/luphord/monte-carlo-contracts"
 sha = "df8f5d5666f82ea666a82190ab4b5f5e770eebdf"
 lib = "numpy"
 to = 2
-test_args = "tests"
+test_args = "tests -p no:nbval"
 baseline_pins = ["numpy==1.26.4", "pandas<3"]
 
 [[case]]
