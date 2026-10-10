@@ -332,7 +332,8 @@ class Upgrader:
             return None
         res.to_version = ws.installed_version(s.lib) or ""
         run = ws.run_tests()
-        self.ev.emit("tests", label="after bump", summary=run.summary(), **_run_stats(run))
+        self.ev.emit("tests", label="after bump", summary=run.summary(),
+                     failures=render(group_failures(run), run, limit_chars=4000), **_run_stats(run))
         self.ev.stage("bump", "done", detail=f"{s.lib}=={res.to_version}: {run.summary()}")
         return run
 
@@ -426,16 +427,17 @@ class Upgrader:
             nonlocal current
             sel = select.split() if select else None
             tr = ws.run_tests(sel)
+            text = render(group_failures(tr), tr, limit_chars=7000) if (tr.failed or tr.collection_error) else ""
             if not sel:
                 current = tr
                 kept = len(baseline.passed & tr.passed)
                 self.ev.emit("tests", label="fix", summary=tr.summary(), kept=kept,
-                             of=len(baseline.passed), **_run_stats(tr))
+                             of=len(baseline.passed), failures=text[:4000], **_run_stats(tr))
             else:
-                self.ev.emit("tests", label="selected", summary=tr.summary(), **_run_stats(tr))
-            if not tr.failed and not tr.collection_error:
+                self.ev.emit("tests", label="selected", summary=tr.summary(), failures=text[:2000], **_run_stats(tr))
+            if not text:
                 return f"ALL PASS: {tr.summary()}"
-            return render(group_failures(tr), tr, limit_chars=7000)
+            return text
 
         lookup = (lambda q: self.researcher.lookup(s.lib, q)) if s.use_research else (lambda q: "search disabled")
         tb = ToolBox(ws, self.ev, s.lib, s.target_spec, lookup, run_tests_tool, s.test_policy)
