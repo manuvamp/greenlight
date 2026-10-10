@@ -12,6 +12,7 @@ from dataclasses import dataclass
 
 MANIFEST_GLOBS = [
     "requirements*.txt", "requirements/*.txt", "requirements/*.in", "requirements*.in",
+    "*-requirements.txt", "*_requirements.txt",
     "constraints*.txt", "setup.py", "setup.cfg", "pyproject.toml", "tox.ini",
 ]
 

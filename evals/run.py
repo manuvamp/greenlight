@@ -76,7 +76,10 @@ def summarize(rows: list[dict], out: Path, a: argparse.Namespace) -> None:
         lines.append(f"| {r['case']} | {r['lib']} | {r['status']} | {b.get('passed', '')}/{b.get('total', '')} "
                      f"| {f.get('passed', '')}/{f.get('total', '')} | {r['iterations']} | {r['escalations']} "
                      f"| {r['usd']:.3f} | {r['seconds']:.0f} | {r['headline'][:90]} |")
-    full = [r for r in rows if not r["status"].startswith("precheck")]
+    full = [] if a.precheck else rows
+    if a.precheck:
+        ok = [r["case"] for r in rows if r["status"] == "precheck-ok"]
+        lines += ["", f"**{len(ok)}/{len(rows)} cases usable** (green baseline, red after the bump): {', '.join(ok)}"]
     if full:
         green = [r for r in full if r["status"] == "green"]
         scored = [r for r in full if r["status"] in ("green", "partial", "failed")]

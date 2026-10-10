@@ -50,7 +50,7 @@ repo = "https://github.com/Django-Simple-API/django-simple-api"
 sha = "9dd203b0899dbe3f736866702858c6e4a017a7e8"
 lib = "pydantic"
 to = 2
-python = "3.11"
+python = "3.9"
 
 [[case]]
 id = "aurorae"
@@ -58,7 +58,7 @@ repo = "https://github.com/vintasoftware/aurorae"
 sha = "fe04774854783bef9b6b4c9d01b557fbd0d5e727"
 lib = "pydantic"
 to = 2
-python = "3.11"
+python = "3.9"
 test_args = "tests/"
 extra_deps = ["pytest<8"]
 
@@ -98,6 +98,7 @@ lib = "numpy"
 to = 2
 test_args = "tests -o addopts=''"
 test_env = { CI_TEST = "true" }
+baseline_pins = ["numpy<2"]
 
 [[case]]
 id = "nsopy"
@@ -124,17 +125,6 @@ sha = "ee319a129ae66492c65fb2bc678fc60122b2ac09"
 lib = "numpy"
 to = 2
 baseline_pins = ["numpy==1.26.4"]
-
-[[case]]
-id = "mpnum"
-repo = "https://github.com/dsuess/mpnum"
-sha = "32c11b699ad748836f027b7ab2aa3ca236586e56"
-lib = "numpy"
-to = 2
-test_args = "tests"
-baseline_pins = ["numpy==1.26.4"]
-
-# ---------------- pandas 1 -> 2 ----------------
 
 [[case]]
 id = "datacatalog-tag-exporter"

@@ -51,6 +51,13 @@ class TestRun:
                 + (" (collection error)" if self.collection_error else ""))
 
 
+def _tolerant_install(reqs: list[str]) -> str:
+    """Install all at once; if that fails, one by one, skipping what won't install. Never fails."""
+    q = " ".join(shlex.quote(r) for r in reqs)
+    return (f"uv pip install --python {PY} {q} || "
+            f"for r in {q}; do uv pip install --python {PY} \"$r\" || echo \"greenlight: skipped dev dep $r\"; done; true")
+
+
 def parse_junit(xml_text: str) -> tuple[dict[str, str], dict[str, str]]:
     results: dict[str, str] = {}
     failures: dict[str, str] = {}
@@ -87,10 +94,13 @@ class Project:
 
 class Workspace:
     def __init__(self, sandbox: Sandbox, log=print, *, baseline_pins: list[str] | None = None,
-                 extra_deps: list[str] | None = None, test_env: dict[str, str] | None = None):
+                 extra_deps: list[str] | None = None, test_env: dict[str, str] | None = None,
+                 target_lib: str = ""):
         self.sb = sandbox
         self.log = log
         self.project: Project | None = None
+        self.target_lib = target_lib
+        self.dev_deps: list[str] = []
         # Pins that only hold the *starting* state (e.g. numpy==1.26.4 for a repo with no cap).
         self.baseline_pins = list(baseline_pins or [])
         self.extra_deps = list(extra_deps or [])
@@ -161,6 +171,10 @@ class Workspace:
             cmds.append(f"uv pip install --python {PY} -e {shlex.quote(target)}")
         for rf in sorted(req_files, key=lambda f: ("dev" in f or "test" in f, f)):
             cmds.append(f"uv pip install --python {PY} -r {shlex.quote(rf)}")
+        self.dev_deps = self._dev_deps()
+        if self.dev_deps:
+            self.log(f"test/dev dependencies: {', '.join(self.dev_deps)}")
+            cmds.append(_tolerant_install(self.dev_deps))
         cmds.append(f"uv pip install --python {PY} pytest pytest-timeout")
         if self.extra_deps:
             cmds.append(f"uv pip install --python {PY} " + " ".join(shlex.quote(d) for d in self.extra_deps))
@@ -172,6 +186,13 @@ class Workspace:
                 test_cmd += " " + test_args
         self.project = Project(manifests, python, cmds, test_cmd)
         return self.project
+
+    def _dev_deps(self) -> list[str]:
+        """Test/dev deps declared in Poetry groups, PEP 735, Hatch, PDM or tox (see devdeps.py)."""
+        script = (Path(__file__).parent / "devdeps.py").read_text(encoding="utf-8")
+        self.sb.write_file("/tmp/gl-devdeps.py", script)
+        r = self.sb.run(f"python3 /tmp/gl-devdeps.py /repo {shlex.quote(self.target_lib)}", timeout=60)
+        return [ln.strip() for ln in r.stdout.splitlines() if ln.strip()] if r.ok else []
 
     def _read(self, path: str) -> str:
         try:

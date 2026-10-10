@@ -23,7 +23,8 @@ def _upgrade(a: argparse.Namespace) -> int:
     spec = UpgradeSpec(source=a.source, lib=lib, to_major=int(major), ref=a.ref, python=a.python,
                        test_cmd=a.test_cmd, allow_test_edits=a.allow_test_edits,
                        max_iterations=a.max_iterations, max_minutes=a.max_minutes,
-                       model_override=a.model, use_research=not a.no_research, editor=a.editor)
+                       model_override=a.model, use_research=not a.no_research, editor=a.editor,
+                       bulk=not a.no_bulk)
     runs = Path(a.runs_dir)
     ex = get_executor(a.executor)
     up = Upgrader(spec, ex, runs_dir=runs)
@@ -70,6 +71,7 @@ def main(argv: list[str] | None = None) -> int:
     u.add_argument("--max-minutes", type=float, default=20)
     u.add_argument("--model", help="force one model for every role (ablation)")
     u.add_argument("--no-research", action="store_true", help="skip Tavily rule sheet (ablation)")
+    u.add_argument("--no-bulk", action="store_true", help="skip the one-pass parallel file migration (ablation)")
     u.add_argument("--editor", default="super-first", choices=["super-first", "cascade", "lightning", "super", "ultra"],
                    help="which model edits code; super-first = Super, then Ultra if it stalls; "
                         "cascade = Lightning → Super → Ultra")

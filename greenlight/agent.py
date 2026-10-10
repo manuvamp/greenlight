@@ -8,10 +8,12 @@ Model routing (see models.py):
 
 from __future__ import annotations
 
+import ast
 import json
 import re
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
@@ -22,13 +24,27 @@ from .llm import LLM, LLMError, record_to_dict
 from .manifest import requirement_spec
 from .models import Role
 from .research import Researcher, RuleSheet
-from .tools import READ_MARK, SCHEMAS, ToolBox, norm_path
+from .tools import READ_MARK, SCHEMAS, ToolBox, is_test_file, norm_path
 from .triage import group_failures, render
 from .verify import VerifyReport, verify
 from .workspace import TestRun, Workspace
 
 PYTHON_FALLBACKS = ["3.11", "3.10", "3.12", "3.9"]
 MAX_PROMPT_RULES = 40
+BULK_MAX_FILES = 16
+BULK_MAX_LINES = 700
+
+BULK_SYSTEM = """You migrate ONE file of a project whose dependency `{lib}` was upgraded {from_v} → {to_v} ({spec}).
+Return the COMPLETE migrated file in a single fenced code block, and nothing else.
+- Apply every relevant migration below; keep all other code, comments, order and formatting identical.
+- Use the real new APIs. Never use compatibility shims (e.g. pydantic.v1).
+- Keep behaviour identical. If a feature moved to another package, import it from there
+  (and for a requirements/pyproject file, add that package).
+- Never loosen or remove the {lib} constraint.
+- If nothing in this file needs to change, return it unchanged.
+
+Migration rules (from the official guide):
+{rules}"""
 
 
 @dataclass
@@ -52,6 +68,7 @@ class UpgradeSpec:
     baseline_pins: list = field(default_factory=list)  # hold the starting state, e.g. numpy==1.26.4
     extra_deps: list = field(default_factory=list)     # e.g. pytest<8
     precheck: bool = False             # stop after baseline + bump (no model calls)
+    bulk: bool = True                  # one-pass parallel migration of planned files before the tool loop
     test_args: str = ""                # appended to the default pytest command
     test_env: dict = field(default_factory=dict)
     baseline_pins: list = field(default_factory=list)  # hold the starting versions, e.g. numpy==1.26.4
@@ -164,7 +181,7 @@ class Upgrader:
         try:
             sb = self.executor.open()
             ws = Workspace(sb, log=self.ev.log, baseline_pins=s.baseline_pins, extra_deps=s.extra_deps,
-                           test_env=s.test_env)
+                           test_env=s.test_env, target_lib=s.lib)
             self._prepare(ws)
             baseline = self._baseline(ws, res)
             if baseline is None:
@@ -338,6 +355,7 @@ class Upgrader:
                 if ident.lower() in low and ident.lower() not in ("field", "model", "config", "class"):
                     hits.setdefault(r.id, [])
                     break
+        self._rule_hits = hits
         # Rules with real call sites first, then the ones only named in the failures; cap the total.
         with_sites = [r for r in sheet.rules if hits.get(r.id)]
         named = [r for r in sheet.rules if r.id in hits and not hits[r.id]]
@@ -399,12 +417,27 @@ class Upgrader:
         lookup = (lambda q: self.researcher.lookup(s.lib, q)) if s.use_research else (lambda q: "search disabled")
         tb = ToolBox(ws, self.ev, s.lib, s.target_spec, lookup, run_tests_tool, s.allow_test_edits)
 
+        progress = ""
+        if s.bulk:
+            self.ev.stage("migrate", detail="Super migrates each planned file in one pass, in parallel")
+            n = self._bulk_migrate(ws, plan, sheet, tb)
+            if any(not p.path.endswith(".py") for p in tb.patches):
+                self.ev.log(f"manifests changed; reinstalling: {tb.t_reinstall().splitlines()[0]}")
+            if n:
+                failures = run_tests_tool("")
+                progress = ws.diff()
+            self.ev.stage("migrate", "done", detail=f"{n} file(s) migrated; "
+                          f"{len(baseline.passed & current.passed)}/{len(baseline.passed)} baseline tests pass")
+            if baseline.passed <= current.passed:
+                res.patches = [p.__dict__ for p in tb.patches]
+                return current
+
         tiers = _editor_tiers(s.editor)
         tier = 0
-        best_kept = len(baseline.passed & bumped.passed)
-        last_sig = _failure_signature(bumped)
+        best_kept = len(baseline.passed & current.passed)
+        last_sig = _failure_signature(current)
         stalls = replans = 0
-        messages = self._editor_messages(plan, failures, rules_txt)
+        messages = self._editor_messages(plan, failures, rules_txt, progress=progress)
         for it in range(1, s.max_iterations + 1):
             res.iterations = it
             editor = tiers[tier]
@@ -470,6 +503,81 @@ class Upgrader:
         res.patches = [p.__dict__ for p in tb.patches]
         return current
 
+    # ---------- bulk migration: one call per file, in parallel ----------
+
+    def _bulk_targets(self, ws: Workspace, plan: dict) -> list[str]:
+        planned = [st.get("file", "") for st in plan.get("steps", []) if isinstance(st, dict)]
+        if plan.get("dependency_changes") and ws.project:
+            planned += [m for m in ws.project.manifests if "requirements" in m or m == "pyproject.toml"][:2]
+        with_sites = {site.split(":", 1)[0] for sites in self._rule_hits.values() for site in sites}
+        out: list[str] = []
+        for f in planned + sorted(with_sites):
+            f = norm_path(f or "")
+            if not f or f in out or is_test_file(f):
+                continue
+            if not (f.endswith(".py") or "requirements" in f or f in ("pyproject.toml", "setup.py", "setup.cfg")):
+                continue
+            if ws.sb.exists(f):
+                out.append(f)
+        return out[:BULK_MAX_FILES]
+
+    def _bulk_migrate(self, ws: Workspace, plan: dict, sheet: RuleSheet, tb: ToolBox) -> int:
+        s = self.spec
+        targets = self._bulk_targets(ws, plan)
+        by_id = {r.id: r for r in sheet.rules}
+
+        def one(path: str) -> tuple[str, str, str] | None:
+            current = ws.sb.read_file(path)
+            n_lines = len(current.splitlines())
+            if n_lines > BULK_MAX_LINES:
+                return None
+            ids = [rid for rid, sites in self._rule_hits.items()
+                   if any(x.startswith(f"{path}:") for x in sites)]
+            ids += [rid for rid, sites in self._rule_hits.items() if not sites][:10]
+            rules = "\n".join(f"[{rid}] {by_id[rid].old} → {by_id[rid].new}"
+                              f"{(' — ' + by_id[rid].note[:140]) if by_id[rid].note else ''}"
+                              for rid in dict.fromkeys(ids) if rid in by_id)[:9000]
+            steps = [st for st in plan.get("steps", []) if isinstance(st, dict) and norm_path(st.get("file", "")) == path]
+            deps = plan.get("dependency_changes") or []
+            msgs = [{"role": "system", "content": BULK_SYSTEM.format(
+                        lib=s.lib, from_v=self.from_v, to_v=self.to_v, spec=s.target_spec,
+                        rules=rules or "(no specific rules; use your knowledge of the migration)")},
+                    {"role": "user", "content":
+                        f"Planned changes for this file: {json.dumps(steps)}\n"
+                        + (f"Dependency changes in the plan: {json.dumps(deps)}\n" if deps and not path.endswith('.py') else "")
+                        + f"\nFile `{path}`:\n```\n{current}\n```"}]
+            budget = min(16000, int(len(current) / 2.5) + 1000)
+            r = self.llm.chat(Role.EDIT, msgs, run=self.run_id, max_tokens=budget, thinking=False, temperature=0.1)
+            new = _code_block(r.content)
+            if new is None or new.strip() == current.strip():
+                return None
+            if path.endswith(".py"):
+                try:
+                    ast.parse(new)
+                except SyntaxError as e:
+                    self.ev.log(f"bulk rewrite of {path} rejected: syntax error at line {e.lineno}")
+                    return None
+            if n_lines >= 20 and len(new.splitlines()) < 0.6 * n_lines:
+                self.ev.log(f"bulk rewrite of {path} rejected: looks truncated")
+                return None
+            return path, current, new
+
+        results = []
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            for fut in [pool.submit(one, p) for p in targets]:
+                try:
+                    out = fut.result()
+                except (LLMError, OSError) as e:
+                    self.ev.log(f"bulk rewrite failed: {e}")
+                    out = None
+                if out:
+                    results.append(out)
+        for path, current, new in results:
+            msg = tb.t_rewrite_file(path, new, rule="bulk")
+            if not msg.startswith("OK"):
+                self.ev.log(f"bulk rewrite of {path}: {msg}")
+        return sum(1 for p in tb.patches if p.rule == "bulk")
+
     def _editor_messages(self, plan: dict, failures: str, rules_txt: str, progress: str = "") -> list[dict]:
         s = self.spec
         system = EDIT_SYSTEM.format(lib=s.lib, spec=s.target_spec, from_v=self.from_v, to_v=self.to_v,
@@ -501,6 +609,15 @@ class Upgrader:
             return self.llm.chat(Role.WRITE, msgs, run=self.run_id, max_tokens=2500).content
         except (LLMError, BudgetExceeded) as e:
             return f"(summary unavailable: {e})"
+
+
+def _code_block(text: str) -> str | None:
+    """The body of the last fenced code block, or None."""
+    blocks = re.findall(r"```[a-zA-Z0-9_+-]*\n(.*?)```", text or "", flags=re.S)
+    if not blocks:
+        return None
+    body = blocks[-1]
+    return body if body.endswith("\n") else body + "\n"
 
 
 def _editor_tiers(editor: str) -> list:
