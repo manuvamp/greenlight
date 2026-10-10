@@ -54,10 +54,10 @@ Replay `kubedeployer-pydantic-v2`, played at 8–16×. Callouts appear as each s
 
 ### 6. Honest results (2:15–2:35)
 **On screen:**
-- Scoreboard page: 11 real repos; green, partial and failed badges; per-repo tests and cost.
+- Scoreboard page: 12 real repos; green, partial and failed badges; per-repo tests and cost.
 - Highlight terka (SQLAlchemy 1.4 → 2.0, 33/33) and blocklib (40/40).
 
-**VO:** "We tested on real repositories stuck on pydantic, numpy and SQLAlchemy. Four upgrades fully green on Nemotron, and every failure is reported as a failure, never as a pass."
+**VO:** "We tested on real repositories stuck on pydantic, numpy and SQLAlchemy. Six of twelve upgrades fully green on Nemotron, and every failure is reported as a failure, never as a pass."
 
 ### 7. PR and close (2:35–2:50)
 **On screen:**
@@ -73,4 +73,4 @@ Replay `kubedeployer-pydantic-v2`, played at 8–16×. Callouts appear as each s
 - Keep the replay header's cost and elapsed counters visible; they're the proof.
 - The music bed is low, with no lyrics. Ducked under the VO.
 - Captions are burned in at the bottom. Judges often watch muted.
-- **Check the numbers before export:** kubedeployer 36/36 at $0.372; nsopy 37 s at $0.011; terka 33/33; blocklib 40/40; scoreboard 4 green of 11.
+- **Check the numbers before export:** kubedeployer 36/36 at $0.372; nsopy 37 s at $0.011; terka 33/33; blocklib 40/40; scoreboard 6 green of 12.

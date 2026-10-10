@@ -1,0 +1,150 @@
+{
+  "tag": "eval-nemotron-2",
+  "cases": 5,
+  "green": 2,
+  "partial": 1,
+  "failed": 2,
+  "errors": 0,
+  "green_rate": 0.4,
+  "median_usd_green": 0.2528,
+  "median_seconds_green": 287.8,
+  "total_usd": 2.2662,
+  "by_role_usd": {
+    "plan:Nemotron 3 Ultra": 0.05784,
+    "edit:Nemotron 3 Super": 2.13813,
+    "escalate:Nemotron 3 Ultra": 0.0685,
+    "write:Nemotron 3.5 Lightning": 0.0016
+  },
+  "rows": [
+    {
+      "case": "engorgio",
+      "lib": "pydantic",
+      "status": "green",
+      "headline": "pydantic 1.10.26 \u2192 2.14.0: all 55 baseline tests pass",
+      "usd": 0.40019,
+      "seconds": 336.8,
+      "iterations": 3,
+      "escalations": 1,
+      "from_version": "1.10.26",
+      "to_version": "2.14.0",
+      "baseline": {
+        "passed": 55,
+        "failed": 0,
+        "skipped": 0,
+        "total": 55,
+        "collection_error": false
+      },
+      "final": {
+        "passed": 55,
+        "failed": 0,
+        "skipped": 0,
+        "total": 55,
+        "collection_error": false
+      }
+    },
+    {
+      "case": "essential-sqlalchemy",
+      "lib": "sqlalchemy",
+      "status": "failed",
+      "headline": "0/26 baseline tests pass; verification failed",
+      "usd": 0.64343,
+      "seconds": 525.3,
+      "iterations": 5,
+      "escalations": 0,
+      "from_version": "1.4.54",
+      "to_version": "2.0.54",
+      "baseline": {
+        "passed": 26,
+        "failed": 0,
+        "skipped": 0,
+        "total": 26,
+        "collection_error": false
+      },
+      "final": {
+        "passed": 0,
+        "failed": 3,
+        "skipped": 0,
+        "total": 3,
+        "collection_error": true
+      }
+    },
+    {
+      "case": "noteql",
+      "lib": "sqlalchemy",
+      "status": "failed",
+      "headline": "0/11 baseline tests pass; verification failed",
+      "usd": 0.458,
+      "seconds": 371.5,
+      "iterations": 5,
+      "escalations": 2,
+      "from_version": "1.4.46",
+      "to_version": "2.0.54",
+      "baseline": {
+        "passed": 11,
+        "failed": 0,
+        "skipped": 0,
+        "total": 11,
+        "collection_error": false
+      },
+      "final": {
+        "passed": 0,
+        "failed": 11,
+        "skipped": 0,
+        "total": 11,
+        "collection_error": false
+      }
+    },
+    {
+      "case": "pydantic-vault",
+      "lib": "pydantic",
+      "status": "partial",
+      "headline": "35/43 baseline tests pass after migration",
+      "usd": 0.65909,
+      "seconds": 486.8,
+      "iterations": 4,
+      "escalations": 0,
+      "from_version": "1.10.26",
+      "to_version": "2.14.0",
+      "baseline": {
+        "passed": 43,
+        "failed": 0,
+        "skipped": 0,
+        "total": 43,
+        "collection_error": false
+      },
+      "final": {
+        "passed": 35,
+        "failed": 8,
+        "skipped": 0,
+        "total": 43,
+        "collection_error": false
+      }
+    },
+    {
+      "case": "queueing-tool",
+      "lib": "numpy",
+      "status": "green",
+      "headline": "numpy 1.26.4 \u2192 2.4.6: all 27 baseline tests pass",
+      "usd": 0.10545,
+      "seconds": 238.7,
+      "iterations": 1,
+      "escalations": 0,
+      "from_version": "1.26.4",
+      "to_version": "2.4.6",
+      "baseline": {
+        "passed": 27,
+        "failed": 27,
+        "skipped": 5,
+        "total": 59,
+        "collection_error": false
+      },
+      "final": {
+        "passed": 54,
+        "failed": 0,
+        "skipped": 5,
+        "total": 59,
+        "collection_error": false
+      }
+    }
+  ]
+}

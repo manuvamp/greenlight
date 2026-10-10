@@ -18,7 +18,7 @@ RUN pip install . fastapi "uvicorn[standard]"
 COPY server/ server/
 COPY replays/ replays/
 COPY evals/dataset.toml evals/dataset.toml
-COPY evals/results/eval-nemotron/scoreboard.json evals/results/eval-nemotron/scoreboard.json
+COPY evals/results/eval-official/scoreboard.json evals/results/eval-official/scoreboard.json
 COPY examples/ examples/
 COPY --from=web /web/dist web/dist
 # Hugging Face Spaces routes to port 7860; elsewhere set PORT.

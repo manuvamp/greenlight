@@ -1,0 +1,343 @@
+{
+  "tag": "eval-official",
+  "note": "Most recent NVIDIA Nemotron result per repo across passes eval-nemotron, eval-nemotron-2 (later passes ran on improved harness code).",
+  "passes": [
+    "eval-nemotron",
+    "eval-nemotron-2"
+  ],
+  "cases": 12,
+  "green": 6,
+  "partial": 1,
+  "failed": 5,
+  "errors": 0,
+  "green_rate": 0.5,
+  "median_usd_green": 0.1513,
+  "median_seconds_green": 217.1,
+  "total_usd": 7.299,
+  "rows": [
+    {
+      "case": "blocklib",
+      "lib": "pydantic",
+      "status": "green",
+      "headline": "pydantic 1.10.26 \u2192 2.14.0: all 40 baseline tests pass",
+      "usd": 0.19715,
+      "seconds": 195.5,
+      "iterations": 2,
+      "escalations": 0,
+      "from_version": "1.10.26",
+      "to_version": "2.14.0",
+      "baseline": {
+        "passed": 40,
+        "failed": 0,
+        "skipped": 0,
+        "total": 40,
+        "collection_error": false
+      },
+      "final": {
+        "passed": 40,
+        "failed": 0,
+        "skipped": 0,
+        "total": 40,
+        "collection_error": false
+      },
+      "pass": "eval-nemotron"
+    },
+    {
+      "case": "engorgio",
+      "lib": "pydantic",
+      "status": "green",
+      "headline": "pydantic 1.10.26 \u2192 2.14.0: all 55 baseline tests pass",
+      "usd": 0.40019,
+      "seconds": 336.8,
+      "iterations": 3,
+      "escalations": 1,
+      "from_version": "1.10.26",
+      "to_version": "2.14.0",
+      "baseline": {
+        "passed": 55,
+        "failed": 0,
+        "skipped": 0,
+        "total": 55,
+        "collection_error": false
+      },
+      "final": {
+        "passed": 55,
+        "failed": 0,
+        "skipped": 0,
+        "total": 55,
+        "collection_error": false
+      },
+      "pass": "eval-nemotron-2"
+    },
+    {
+      "case": "kubedeployer",
+      "lib": "pydantic",
+      "status": "green",
+      "headline": "pydantic 1.10.2 \u2192 2.14.0: all 36 baseline tests pass",
+      "usd": 0.37182,
+      "seconds": 292.1,
+      "iterations": 4,
+      "escalations": 2,
+      "from_version": "1.10.2",
+      "to_version": "2.14.0",
+      "baseline": {
+        "passed": 36,
+        "failed": 6,
+        "skipped": 0,
+        "total": 42,
+        "collection_error": false
+      },
+      "final": {
+        "passed": 36,
+        "failed": 6,
+        "skipped": 0,
+        "total": 42,
+        "collection_error": false
+      },
+      "pass": "eval-nemotron"
+    },
+    {
+      "case": "nsopy",
+      "lib": "numpy",
+      "status": "green",
+      "headline": "numpy 1.26.4 \u2192 2.4.6: all 26 baseline tests pass",
+      "usd": 0.01064,
+      "seconds": 37.1,
+      "iterations": 0,
+      "escalations": 0,
+      "from_version": "1.26.4",
+      "to_version": "2.4.6",
+      "baseline": {
+        "passed": 26,
+        "failed": 0,
+        "skipped": 7,
+        "total": 33,
+        "collection_error": false
+      },
+      "final": {
+        "passed": 26,
+        "failed": 0,
+        "skipped": 7,
+        "total": 33,
+        "collection_error": false
+      },
+      "pass": "eval-nemotron"
+    },
+    {
+      "case": "queueing-tool",
+      "lib": "numpy",
+      "status": "green",
+      "headline": "numpy 1.26.4 \u2192 2.4.6: all 27 baseline tests pass",
+      "usd": 0.10545,
+      "seconds": 238.7,
+      "iterations": 1,
+      "escalations": 0,
+      "from_version": "1.26.4",
+      "to_version": "2.4.6",
+      "baseline": {
+        "passed": 27,
+        "failed": 27,
+        "skipped": 5,
+        "total": 59,
+        "collection_error": false
+      },
+      "final": {
+        "passed": 54,
+        "failed": 0,
+        "skipped": 5,
+        "total": 59,
+        "collection_error": false
+      },
+      "pass": "eval-nemotron-2"
+    },
+    {
+      "case": "terka",
+      "lib": "sqlalchemy",
+      "status": "green",
+      "headline": "sqlalchemy 1.4.0 \u2192 2.0.54: all 33 baseline tests pass",
+      "usd": 0.08534,
+      "seconds": 118.8,
+      "iterations": 0,
+      "escalations": 0,
+      "from_version": "1.4.0",
+      "to_version": "2.0.54",
+      "baseline": {
+        "passed": 33,
+        "failed": 0,
+        "skipped": 0,
+        "total": 33,
+        "collection_error": false
+      },
+      "final": {
+        "passed": 33,
+        "failed": 0,
+        "skipped": 0,
+        "total": 33,
+        "collection_error": false
+      },
+      "pass": "eval-nemotron"
+    },
+    {
+      "case": "bdantic",
+      "lib": "pydantic",
+      "status": "failed",
+      "headline": "15/43 baseline tests pass; verification failed",
+      "usd": 0.64029,
+      "seconds": 838.1,
+      "iterations": 4,
+      "escalations": 1,
+      "from_version": "1.10.26",
+      "to_version": "2.14.0",
+      "baseline": {
+        "passed": 43,
+        "failed": 1,
+        "skipped": 0,
+        "total": 44,
+        "collection_error": false
+      },
+      "final": {
+        "passed": 15,
+        "failed": 29,
+        "skipped": 0,
+        "total": 44,
+        "collection_error": false
+      },
+      "pass": "eval-nemotron"
+    },
+    {
+      "case": "boardgamebuilder",
+      "lib": "pydantic",
+      "status": "failed",
+      "headline": "39/95 baseline tests pass; verification failed",
+      "usd": 0.638,
+      "seconds": 344.6,
+      "iterations": 3,
+      "escalations": 0,
+      "from_version": "1.10.4",
+      "to_version": "2.14.0",
+      "baseline": {
+        "passed": 95,
+        "failed": 0,
+        "skipped": 1,
+        "total": 96,
+        "collection_error": false
+      },
+      "final": {
+        "passed": 39,
+        "failed": 56,
+        "skipped": 1,
+        "total": 96,
+        "collection_error": false
+      },
+      "pass": "eval-nemotron"
+    },
+    {
+      "case": "clidantic",
+      "lib": "pydantic",
+      "status": "failed",
+      "headline": "10/23 baseline tests pass; verification failed",
+      "usd": 0.63792,
+      "seconds": 373.5,
+      "iterations": 5,
+      "escalations": 1,
+      "from_version": "1.10.26",
+      "to_version": "2.14.0",
+      "baseline": {
+        "passed": 23,
+        "failed": 11,
+        "skipped": 0,
+        "total": 34,
+        "collection_error": false
+      },
+      "final": {
+        "passed": 10,
+        "failed": 24,
+        "skipped": 0,
+        "total": 34,
+        "collection_error": false
+      },
+      "pass": "eval-nemotron"
+    },
+    {
+      "case": "essential-sqlalchemy",
+      "lib": "sqlalchemy",
+      "status": "failed",
+      "headline": "0/26 baseline tests pass; verification failed",
+      "usd": 0.64343,
+      "seconds": 525.3,
+      "iterations": 5,
+      "escalations": 0,
+      "from_version": "1.4.54",
+      "to_version": "2.0.54",
+      "baseline": {
+        "passed": 26,
+        "failed": 0,
+        "skipped": 0,
+        "total": 26,
+        "collection_error": false
+      },
+      "final": {
+        "passed": 0,
+        "failed": 3,
+        "skipped": 0,
+        "total": 3,
+        "collection_error": true
+      },
+      "pass": "eval-nemotron-2"
+    },
+    {
+      "case": "noteql",
+      "lib": "sqlalchemy",
+      "status": "failed",
+      "headline": "0/11 baseline tests pass; verification failed",
+      "usd": 0.458,
+      "seconds": 371.5,
+      "iterations": 5,
+      "escalations": 2,
+      "from_version": "1.4.46",
+      "to_version": "2.0.54",
+      "baseline": {
+        "passed": 11,
+        "failed": 0,
+        "skipped": 0,
+        "total": 11,
+        "collection_error": false
+      },
+      "final": {
+        "passed": 0,
+        "failed": 11,
+        "skipped": 0,
+        "total": 11,
+        "collection_error": false
+      },
+      "pass": "eval-nemotron-2"
+    },
+    {
+      "case": "pydantic-vault",
+      "lib": "pydantic",
+      "status": "partial",
+      "headline": "35/43 baseline tests pass after migration",
+      "usd": 0.65909,
+      "seconds": 486.8,
+      "iterations": 4,
+      "escalations": 0,
+      "from_version": "1.10.26",
+      "to_version": "2.14.0",
+      "baseline": {
+        "passed": 43,
+        "failed": 0,
+        "skipped": 0,
+        "total": 43,
+        "collection_error": false
+      },
+      "final": {
+        "passed": 35,
+        "failed": 8,
+        "skipped": 0,
+        "total": 43,
+        "collection_error": false
+      },
+      "pass": "eval-nemotron-2"
+    }
+  ]
+}

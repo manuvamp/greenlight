@@ -40,7 +40,7 @@ INCLUDE = [
     "Dockerfile", ".dockerignore", "pyproject.toml", "LICENSE",
     "greenlight/**", "server/**", "web/src/**", "web/public/**", "web/index.html",
     "web/package.json", "web/package-lock.json", "web/tsconfig.json", "web/vite.config.ts",
-    "replays/**", "examples/**", "evals/dataset.toml", "evals/results/eval-nemotron/scoreboard.json",
+    "replays/**", "examples/**", "evals/dataset.toml", "evals/results/eval-official/scoreboard.json",
 ]
 EXCLUDE = ["**/__pycache__/**", "**/*.pyc", "web/node_modules/**", "web/dist/**"]
 

@@ -61,16 +61,18 @@ The web app replays every run event by event: a live test meter, the stage timel
 
 ## Results (NVIDIA Nemotron on Nebius Token Factory)
 
-12 real repositories (pydantic, numpy, SQLAlchemy):
+We tested on 12 real public repositories stuck on pydantic 1, numpy 1 or SQLAlchemy 1.4. These are the latest Nemotron results per repo.
 
-- **4 fully green** with every anti-cheat check passing:
+- **6 fully green** with every anti-cheat check passing:
+  - engorgio, pydantic: 55/55
   - blocklib, pydantic: 40/40
   - kubedeployer, pydantic: 36/36
   - terka, SQLAlchemy 1.4→2.0: 33/33
+  - queueing-tool, numpy: 27/27
   - nsopy, numpy: 26/26, in 37 s for $0.011
-- **1 partial** (engorgio: 48/55).
-- The rest are honest failures. One run made 8 tests stop running; verification caught it and reported a failure, not a pass.
-- Median cost per green upgrade: **$0.14**. The whole 12-repo eval cost **$5.03**.
+- **1 partial:** pydantic-vault, 35/43.
+- The rest are honest failures: hard pydantic-internals rewrites, and raw-SQL SQLAlchemy code. One run made 8 tests stop running; verification caught it and reported a failure, not a pass.
+- Median cost per green upgrade: **$0.15**. Both eval passes together cost **$7.30**.
 
 ## Challenges we ran into
 

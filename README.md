@@ -101,28 +101,31 @@ We route each job to the cheapest model that does it well. Every call goes throu
 **Eval set:** 12 real public repositories stuck on an old major version.
 - Each repo is pinned to a commit.
 - Each one passed a free precheck: its tests pass at baseline and break after the bump. Repos whose old environment can't even be installed were dropped from the set, and that is stated here rather than hidden.
-- Full data: `evals/dataset.toml` and `evals/results/eval-nemotron/`.
+- The table shows the **most recent Nemotron result for every repo**. Pass 1 ran all 12. Pass 2 re-ran five of them after harness fixes: shorter tracebacks, a lock race, and longer repair rounds.
+- Data: `evals/results/eval-official/` (combined), `eval-nemotron/` (pass 1) and `eval-nemotron-2/` (pass 2).
 
-| Repo | Upgrade | Result | Tests passing after | Cost | Time |
-|---|---|---|---|---|---|
-| blocklib | pydantic 1.10 → 2.14 | ✅ green | 40/40 | $0.20 | 3m16s |
-| kubedeployer | pydantic 1.10 → 2.14 | ✅ green | 36/36 | $0.37 | 4m52s |
-| terka | SQLAlchemy 1.4 → 2.0 | ✅ green | 33/33 | $0.09 | 1m59s |
-| nsopy | numpy 1.26 → 2.4 | ✅ green | 26/26 | $0.01 | 37s |
-| engorgio | pydantic 1.10 → 2.14 | ◐ partial | 48/55 | $0.37 | 4m49s |
-| pydantic-vault | pydantic 1.10 → 2.14 | ✗ | 34/43 | $0.64 | 6m41s |
-| boardgamebuilder | pydantic 1.10 → 2.14 | ✗ | 39/95 | $0.64 | 5m45s |
-| bdantic | pydantic 1.10 → 2.14 | ✗ | 15/43 | $0.64 | 13m58s |
-| clidantic | pydantic 1.10 → 2.14 | ✗ | 10/23 | $0.64 | 6m14s |
-| noteql | SQLAlchemy 1.4 → 2.0 | ✗ | 0/11 | $0.45 | 5m40s |
-| essential-sqlalchemy | SQLAlchemy 1.4 → 2.0 | ✗ (caught dropping tests) | 0/26 | $0.38 | 17m56s |
-| queueing-tool | numpy 1.26 → 2.4 | harness error (fixed since) | n/a | $0.61 | 6m |
+| Repo | Upgrade | Result | Baseline tests passing after | Cost | Time | Pass |
+|---|---|---|---|---|---|---|
+| engorgio | pydantic 1.10 → 2.14 | ✅ green | 55/55 | $0.40 | 5m37s | 2 |
+| blocklib | pydantic 1.10 → 2.14 | ✅ green | 40/40 | $0.20 | 3m16s | 1 |
+| kubedeployer | pydantic 1.10 → 2.14 | ✅ green | 36/36 | $0.37 | 4m52s | 1 |
+| terka | SQLAlchemy 1.4 → 2.0 | ✅ green | 33/33 | $0.09 | 1m59s | 1 |
+| queueing-tool | numpy 1.26 → 2.4 | ✅ green | 27/27 | $0.11 | 3m59s | 2 |
+| nsopy | numpy 1.26 → 2.4 | ✅ green | 26/26 | $0.01 | 37s | 1 |
+| pydantic-vault | pydantic 1.10 → 2.14 | ◐ partial | 35/43 | $0.66 | 8m07s | 2 |
+| boardgamebuilder | pydantic 1.10 → 2.14 | ✗ | 39/95 | $0.64 | 5m45s | 1 |
+| bdantic | pydantic 1.10 → 2.14 | ✗ | 15/43 | $0.64 | 13m58s | 1 |
+| clidantic | pydantic 1.10 → 2.14 | ✗ | 10/23 | $0.64 | 6m14s | 1 |
+| noteql | SQLAlchemy 1.4 → 2.0 | ✗ | 0/11 | $0.46 | 6m12s | 2 |
+| essential-sqlalchemy | SQLAlchemy 1.4 → 2.0 | ✗ | 0/26 | $0.64 | 8m45s | 2 |
 
-**4 of 11 scored upgrades are fully green with every anti-cheat check passing, plus 1 partial.**
-- Median cost per green upgrade: **$0.14**. Median time: **2m37s**.
-- Five runs stopped at the $0.75 per-run cap while still improving.
-- **Total cost of the whole eval: $5.03.** Super (editing) is 95% of that; Ultra's planning is 5%; Lightning's doc digestion and PR writing cost $0.004.
-- **No failure is ever reported as a pass.** essential-sqlalchemy's edits made 8 tests stop running, and verification caught it.
+**6 of 12 upgrades are fully green with every anti-cheat check passing, plus 1 partial.**
+- Median cost per green upgrade: **$0.15**. Median time: **3m37s**.
+- Both passes together cost **$7.30**. Super (editing) is about 95% of it; Ultra's planning is about 5%; Lightning's doc digestion and PR writing cost fractions of a cent.
+- The failures are the hard cases:
+  - Four repos stopped at the $0.75 per-run cap while still improving: three pydantic 1 repos built on removed internals (`ModelField`, `__root__` models, private attributes) and pydantic-vault.
+  - Two SQLAlchemy 1.4 repos that execute raw SQL strings.
+- **No failure is ever reported as a pass.** In pass 1, essential-sqlalchemy's edits made 8 tests stop running, and verification caught it.
 
 **What we learned:**
 - Nemotron 3 Super makes small, careful edits, one tool call per turn. Multi-file migrations take it many steps.

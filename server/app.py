@@ -77,7 +77,11 @@ def _cases() -> list[dict]:
 
 
 def _latest_scoreboard() -> dict | None:
-    # Only official eval runs (evals/results/eval-*), not one-off trials or prechecks.
+    # The combined official board (latest Nemotron result per repo) wins; otherwise the newest eval-* run.
+    # One-off trials and prechecks are never shown.
+    official = RESULTS / "eval-official" / "scoreboard.json"
+    if official.exists():
+        return json.loads(official.read_text(encoding="utf-8"))
     boards = sorted(RESULTS.glob("eval-*/scoreboard.json"), key=lambda p: p.stat().st_mtime, reverse=True)
     return json.loads(boards[0].read_text(encoding="utf-8")) if boards else None
 
