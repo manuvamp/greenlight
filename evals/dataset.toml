@@ -1,0 +1,195 @@
+# Greenlight eval set: real public repos stuck on an old major version, pinned to a commit.
+# Candidates were found and inspected in research/eval-candidates.md; every case is prechecked
+# (baseline green, bump red) before it counts. Fields:
+#   repo, sha, lib, to          what to upgrade
+#   python                      force a Python version (old pins often need <=3.11)
+#   test_args                   appended to pytest (paths, -o addopts="", --deselect …)
+#   test_env                    env vars for the test run
+#   baseline_pins               hold the starting state when the repo has no upper bound
+#   extra_deps                  extra test-time deps (e.g. an older pytest)
+
+# ---------------- pydantic 1 -> 2 ----------------
+
+[[case]]
+id = "engorgio"
+repo = "https://github.com/WaylonWalker/engorgio"
+sha = "d2c84ca8a3e7c2a8bc401aae999a1f715250fe8d"
+lib = "pydantic"
+to = 2
+test_args = "tests"
+
+[[case]]
+id = "clidantic"
+repo = "https://github.com/edornd/clidantic"
+sha = "62b861c51cc05354d7eeb6aa784b6da00682a771"
+lib = "pydantic"
+to = 2
+test_args = "tests -o addopts=''"
+
+[[case]]
+id = "boardgamebuilder"
+repo = "https://github.com/KonstantinKlepikov/BoardGameBuilder"
+sha = "cda9453465a810485798d2b28128e3a47424fb41"
+lib = "pydantic"
+to = 2
+python = "3.11"
+test_args = "tests"
+
+[[case]]
+id = "blocklib"
+repo = "https://github.com/data61/blocklib"
+sha = "edfd26fbef398b48f464f68453b815ea442a5cdd"
+lib = "pydantic"
+to = 2
+python = "3.11"
+test_args = "tests"
+
+[[case]]
+id = "django-simple-api"
+repo = "https://github.com/Django-Simple-API/django-simple-api"
+sha = "9dd203b0899dbe3f736866702858c6e4a017a7e8"
+lib = "pydantic"
+to = 2
+python = "3.11"
+
+[[case]]
+id = "aurorae"
+repo = "https://github.com/vintasoftware/aurorae"
+sha = "fe04774854783bef9b6b4c9d01b557fbd0d5e727"
+lib = "pydantic"
+to = 2
+python = "3.11"
+test_args = "tests/"
+extra_deps = ["pytest<8"]
+
+[[case]]
+id = "pydantic-vault"
+repo = "https://github.com/nymous/pydantic-vault"
+sha = "7137cea456d791baf84a9f0f134c593b0afc4ff3"
+lib = "pydantic"
+to = 2
+test_args = "-o addopts=''"
+
+[[case]]
+id = "kubedeployer"
+repo = "https://github.com/itlabsio/kubedeployer"
+sha = "62c098f62da20afe278aa160a2990c74cdb5292d"
+lib = "pydantic"
+to = 2
+python = "3.11"
+test_args = "tests/unit/"
+
+[[case]]
+id = "bdantic"
+repo = "https://github.com/jmgilman/bdantic"
+sha = "3caa66d681da7a0cf0dbd6481c3f9005a8f2d8b9"
+lib = "pydantic"
+to = 2
+python = "3.10"
+test_args = "tests -o addopts=''"
+
+# ---------------- numpy 1 -> 2 ----------------
+
+[[case]]
+id = "queueing-tool"
+repo = "https://github.com/djordon/queueing-tool"
+sha = "c5dbd9da28fb0f50c57b49643a7ace2cd427826e"
+lib = "numpy"
+to = 2
+test_args = "tests -o addopts=''"
+test_env = { CI_TEST = "true" }
+
+[[case]]
+id = "nsopy"
+repo = "https://github.com/robin-vjc/nsopy"
+sha = "672cdef29deffc529fe0f1de1186c6a142413e51"
+lib = "numpy"
+to = 2
+test_args = "tests"
+baseline_pins = ["numpy==1.26.4"]
+
+[[case]]
+id = "monte-carlo-contracts"
+repo = "https://github.com/luphord/monte-carlo-contracts"
+sha = "df8f5d5666f82ea666a82190ab4b5f5e770eebdf"
+lib = "numpy"
+to = 2
+test_args = "tests"
+baseline_pins = ["numpy==1.26.4", "pandas<3"]
+
+[[case]]
+id = "harold"
+repo = "https://github.com/ilayn/harold"
+sha = "ee319a129ae66492c65fb2bc678fc60122b2ac09"
+lib = "numpy"
+to = 2
+baseline_pins = ["numpy==1.26.4"]
+
+[[case]]
+id = "mpnum"
+repo = "https://github.com/dsuess/mpnum"
+sha = "32c11b699ad748836f027b7ab2aa3ca236586e56"
+lib = "numpy"
+to = 2
+test_args = "tests"
+baseline_pins = ["numpy==1.26.4"]
+
+# ---------------- pandas 1 -> 2 ----------------
+
+[[case]]
+id = "datacatalog-tag-exporter"
+repo = "https://github.com/mesmacosta/datacatalog-tag-exporter"
+sha = "c9d318f1f051dff8a3a3781950c03e9b8cf3cbd7"
+lib = "pandas"
+to = 2
+python = "3.10"
+test_args = "tests -o addopts=''"
+test_env = { PYTHONPATH = "src" }
+baseline_pins = ["pandas==1.5.3", "numpy<2"]
+
+[[case]]
+id = "datacatalog-fileset-enricher"
+repo = "https://github.com/mesmacosta/datacatalog-fileset-enricher"
+sha = "0792632fc181b13696f89ef3335da4e2ce1dca4a"
+lib = "pandas"
+to = 2
+python = "3.10"
+test_args = "tests -o addopts=''"
+baseline_pins = ["pandas==1.5.3", "numpy<2"]
+
+[[case]]
+id = "spss-converter"
+repo = "https://github.com/insightindustry/spss-converter"
+sha = "42431180a53b37b86c598d74ffc9a5d349388a0f"
+lib = "pandas"
+to = 2
+python = "3.10"
+test_args = "tests -o addopts='' --inputs=/repo/tests/test_files"
+baseline_pins = ["pandas==1.5.3", "numpy<2"]
+
+# ---------------- SQLAlchemy 1.4 -> 2.0 ----------------
+
+[[case]]
+id = "terka"
+repo = "https://github.com/AndreyMarkinPPC/terka"
+sha = "449e94cdf5185dc8b549a456dcfc0a34a2e0eea0"
+lib = "sqlalchemy"
+to = 2
+python = "3.10"
+extra_deps = ["asana"]
+
+[[case]]
+id = "noteql"
+repo = "https://github.com/OpenDataServices/noteql"
+sha = "538596ca8d529613d76bfbc17e630b767457b646"
+lib = "sqlalchemy"
+to = 2
+python = "3.10"
+
+[[case]]
+id = "essential-sqlalchemy"
+repo = "https://github.com/vamsiampolu/essential_sqlalchemy"
+sha = "2457d53b538a568b850211962953e11d8e8ac826"
+lib = "sqlalchemy"
+to = 2
+python = "3.10"

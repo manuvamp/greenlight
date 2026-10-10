@@ -1,0 +1,13 @@
+{"seq": 0, "t": 0.001, "type": "run", "run_id": "clidantic-1791634670", "source": "https://github.com/edornd/clidantic", "ref": "62b861c51cc05354d7eeb6aa784b6da00682a771", "lib": "pydantic", "to_major": 2, "spec": ">=2,<3", "executor": "docker", "model_override": null, "use_research": true}
+{"seq": 1, "t": 0.411, "type": "stage", "name": "prepare", "status": "start", "detail": "https://github.com/edornd/clidantic"}
+{"seq": 2, "t": 3.235, "type": "log", "msg": "commit 62b861c51cc0", "level": "info"}
+{"seq": 3, "t": 3.438, "type": "project", "manifests": ["pyproject.toml"], "python": "3.11", "test_cmd": "/venv/bin/python -m pytest -q -rfE -p no:cacheprovider --timeout=120 --junitxml=/tmp/greenlight-junit.xml -o junit_family=xunit2 tests -o addopts=''"}
+{"seq": 4, "t": 8.117, "type": "stage", "name": "prepare", "status": "done", "detail": "python 3.11, deps installed"}
+{"seq": 5, "t": 8.118, "type": "stage", "name": "baseline", "status": "start"}
+{"seq": 6, "t": 9.155, "type": "tests", "label": "baseline", "summary": "23 passed, 11 failed, 0 skipped", "passed": 23, "failed": 11, "skipped": 0, "total": 34, "collection_error": false}
+{"seq": 7, "t": 9.155, "type": "stage", "name": "baseline", "status": "done", "detail": "pydantic==1.10.26, 23 passed, 11 failed, 0 skipped"}
+{"seq": 8, "t": 9.156, "type": "stage", "name": "bump", "status": "start", "detail": "pydantic>=2,<3"}
+{"seq": 9, "t": 9.326, "type": "pins", "changes": [{"file": "pyproject.toml", "before": "pydantic = \"^1.9.0\"", "after": "pydantic = \">=2,<3\""}, {"file": "pyproject.toml", "before": "\"pydantic\"", "after": "\"pydantic>=2,<3\""}]}
+{"seq": 10, "t": 12.244, "type": "tests", "label": "after bump", "summary": "0 passed, 0 failed, 0 skipped (collection error)", "passed": 0, "failed": 0, "skipped": 0, "total": 0, "collection_error": true}
+{"seq": 11, "t": 12.244, "type": "stage", "name": "bump", "status": "done", "detail": "pydantic==2.14.0: 0 passed, 0 failed, 0 skipped (collection error)"}
+{"seq": 12, "t": 12.342, "type": "log", "msg": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)", "level": "error"}

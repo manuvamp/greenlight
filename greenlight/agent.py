@@ -47,6 +47,11 @@ class UpgradeSpec:
     model_override: str | None = None  # e.g. all-Ultra ablation
     use_research: bool = True          # ablation: no Tavily rule sheet
     editor: str = "super-first"        # super-first | cascade | lightning | super | ultra
+    test_args: str = ""                # appended to the pytest command (paths, -o addopts="", --deselect …)
+    test_env: dict = field(default_factory=dict)
+    baseline_pins: list = field(default_factory=list)  # hold the starting state, e.g. numpy==1.26.4
+    extra_deps: list = field(default_factory=list)     # e.g. pytest<8
+    precheck: bool = False             # stop after baseline + bump (no model calls)
     test_args: str = ""                # appended to the default pytest command
     test_env: dict = field(default_factory=dict)
     baseline_pins: list = field(default_factory=list)  # hold the starting versions, e.g. numpy==1.26.4
@@ -158,13 +163,21 @@ class Upgrader:
         sb = None
         try:
             sb = self.executor.open()
-            ws = Workspace(sb, log=self.ev.log)
+            ws = Workspace(sb, log=self.ev.log, baseline_pins=s.baseline_pins, extra_deps=s.extra_deps,
+                           test_env=s.test_env)
             self._prepare(ws)
             baseline = self._baseline(ws, res)
             if baseline is None:
                 return self._finish(res, ws)
             bumped = self._bump(ws, res)
             if bumped is None:
+                return self._finish(res, ws)
+            if s.precheck:
+                broken = len(baseline.passed - bumped.passed)
+                res.status = "precheck-ok" if broken else "precheck-noop"
+                res.final = _run_stats(bumped)
+                res.headline = (f"baseline {len(baseline.passed)} pass; after bump {broken} of them break"
+                                if broken else "the bump breaks nothing; not a useful case")
                 return self._finish(res, ws)
             if not (baseline.passed - bumped.passed):
                 res.status, res.headline = "noop", "tests already pass after the bump; only the pin changed"
@@ -231,7 +244,7 @@ class Upgrader:
         else:
             ws.upload(s.source)
         self.ev.log(f"commit {ws.head()[:12]}")
-        p = ws.detect(s.python, s.test_cmd)
+        p = ws.detect(s.python, s.test_cmd, s.test_args)
         self.ev.emit("project", manifests=p.manifests, python=p.python, test_cmd=p.test_cmd)
         tried = []
         for py in [p.python] + [v for v in PYTHON_FALLBACKS if v != p.python]:
@@ -271,6 +284,7 @@ class Upgrader:
         s = self.spec
         self.ev.stage("bump", detail=f"{s.lib}{s.target_spec}")
         changes = ws.bump(s.lib, s.target_spec)
+        ws.drop_pins(s.lib)
         res.pin_changes = changes
         self.ev.emit("pins", changes=changes)
         if not changes:

@@ -1,0 +1,4 @@
+{"seq": 0, "t": 0.001, "type": "run", "run_id": "datacatalog-fileset-enricher-1791634729", "source": "https://github.com/mesmacosta/datacatalog-fileset-enricher", "ref": "0792632fc181b13696f89ef3335da4e2ce1dca4a", "lib": "pandas", "to_major": 2, "spec": ">=2,<3", "executor": "docker", "model_override": null, "use_research": true}
+{"seq": 1, "t": 0.269, "type": "stage", "name": "prepare", "status": "start", "detail": "https://github.com/mesmacosta/datacatalog-fileset-enricher"}
+{"seq": 2, "t": 2.654, "type": "log", "msg": "commit 0792632fc181", "level": "info"}
+{"seq": 3, "t": 3.089, "type": "project", "manifests": ["requirements.txt", "requirements_dev.txt", "setup.py", "setup.cfg"], "python": "3.10", "test_cmd": "/venv/bin/python -m pytest -q -rfE -p no:cacheprovider --timeout=120 --junitxml=/tmp/greenlight-junit.xml -o junit_family=xunit2 tests -o addopts=''"}

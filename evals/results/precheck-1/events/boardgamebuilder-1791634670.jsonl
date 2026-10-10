@@ -1,0 +1,14 @@
+{"seq": 0, "t": 0.001, "type": "run", "run_id": "boardgamebuilder-1791634670", "source": "https://github.com/KonstantinKlepikov/BoardGameBuilder", "ref": "cda9453465a810485798d2b28128e3a47424fb41", "lib": "pydantic", "to_major": 2, "spec": ">=2,<3", "executor": "docker", "model_override": null, "use_research": true}
+{"seq": 1, "t": 0.389, "type": "stage", "name": "prepare", "status": "start", "detail": "https://github.com/KonstantinKlepikov/BoardGameBuilder"}
+{"seq": 2, "t": 3.749, "type": "log", "msg": "commit cda9453465a8", "level": "info"}
+{"seq": 3, "t": 4.304, "type": "project", "manifests": ["requirements-dev.txt", "requirements.txt", "setup.py", "setup.cfg", "pyproject.toml"], "python": "3.11", "test_cmd": "/venv/bin/python -m pytest -q -rfE -p no:cacheprovider --timeout=120 --junitxml=/tmp/greenlight-junit.xml -o junit_family=xunit2 tests"}
+{"seq": 4, "t": 19.58, "type": "stage", "name": "prepare", "status": "done", "detail": "python 3.11, deps installed"}
+{"seq": 5, "t": 19.581, "type": "stage", "name": "baseline", "status": "start"}
+{"seq": 6, "t": 20.577, "type": "tests", "label": "baseline", "summary": "95 passed, 0 failed, 1 skipped", "passed": 95, "failed": 0, "skipped": 1, "total": 96, "collection_error": false}
+{"seq": 7, "t": 20.578, "type": "stage", "name": "baseline", "status": "done", "detail": "pydantic==1.10.4, 95 passed, 0 failed, 1 skipped"}
+{"seq": 8, "t": 20.578, "type": "stage", "name": "bump", "status": "start", "detail": "pydantic>=2,<3"}
+{"seq": 9, "t": 21.162, "type": "pins", "changes": [{"file": "requirements-dev.txt", "before": "pydantic==1.10.4", "after": "pydantic>=2,<3"}, {"file": "requirements.txt", "before": "pydantic==1.10.4", "after": "pydantic>=2,<3"}]}
+{"seq": 10, "t": 25.565, "type": "log", "msg": "manifest install failed after the bump (likely a co-dependency pin); forcing the target and leaving the conflict to the planner", "level": "info"}
+{"seq": 11, "t": 27.107, "type": "tests", "label": "after bump", "summary": "0 passed, 4 failed, 0 skipped (collection error)", "passed": 0, "failed": 4, "skipped": 0, "total": 4, "collection_error": true}
+{"seq": 12, "t": 27.107, "type": "stage", "name": "bump", "status": "done", "detail": "pydantic==2.14.0: 0 passed, 4 failed, 0 skipped (collection error)"}
+{"seq": 13, "t": 27.206, "type": "log", "msg": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)", "level": "error"}

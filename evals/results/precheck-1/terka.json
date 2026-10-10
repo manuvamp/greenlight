@@ -1,0 +1,40 @@
+{
+  "run_id": "terka-1791634764",
+  "status": "precheck-ok",
+  "headline": "baseline 33 pass; after bump 32 of them break",
+  "lib": "sqlalchemy",
+  "from_version": "1.4.0",
+  "to_version": "2.0.54",
+  "baseline": {
+    "passed": 33,
+    "failed": 0,
+    "skipped": 0,
+    "total": 33,
+    "collection_error": false
+  },
+  "final": {
+    "passed": 1,
+    "failed": 32,
+    "skipped": 0,
+    "total": 33,
+    "collection_error": false
+  },
+  "verify": {},
+  "diff": "diff --git a/pyproject.toml b/pyproject.toml\nindex c5a6a3c..a705e70 100644\n--- a/pyproject.toml\n+++ b/pyproject.toml\n@@ -5,7 +5,7 @@ build-backend = \"setuptools.build_meta\"\n [project]\n name = \"terka\"\n dependencies = [\n-  \"sqlalchemy==1.4.0\",\n+  \"sqlalchemy>=2,<3\",\n   \"pyaml\",\n   \"rich\",\n   \"textual==0.41.0\",\n",
+  "pin_changes": [
+    {
+      "file": "pyproject.toml",
+      "before": "\"sqlalchemy==1.4.0\"",
+      "after": "\"sqlalchemy>=2,<3\""
+    }
+  ],
+  "patches": [],
+  "iterations": 0,
+  "escalations": 0,
+  "usd": 0,
+  "tavily_credits": 24,
+  "seconds": 40.1,
+  "calls": [],
+  "summary": "",
+  "case": "terka"
+}

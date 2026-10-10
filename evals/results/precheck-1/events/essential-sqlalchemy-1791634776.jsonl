@@ -1,0 +1,11 @@
+{"seq": 0, "t": 0.001, "type": "run", "run_id": "essential-sqlalchemy-1791634776", "source": "https://github.com/vamsiampolu/essential_sqlalchemy", "ref": "2457d53b538a568b850211962953e11d8e8ac826", "lib": "sqlalchemy", "to_major": 2, "spec": ">=2,<3", "executor": "docker", "model_override": null, "use_research": true}
+{"seq": 1, "t": 0.928, "type": "stage", "name": "prepare", "status": "start", "detail": "https://github.com/vamsiampolu/essential_sqlalchemy"}
+{"seq": 2, "t": 3.492, "type": "log", "msg": "commit 2457d53b538a", "level": "info"}
+{"seq": 3, "t": 3.778, "type": "project", "manifests": ["setup.cfg", "pyproject.toml"], "python": "3.10", "test_cmd": "/venv/bin/python -m pytest -q -rfE -p no:cacheprovider --timeout=120 --junitxml=/tmp/greenlight-junit.xml -o junit_family=xunit2"}
+{"seq": 4, "t": 12.557, "type": "stage", "name": "prepare", "status": "done", "detail": "python 3.10, deps installed"}
+{"seq": 5, "t": 12.558, "type": "stage", "name": "baseline", "status": "start"}
+{"seq": 6, "t": 21.507, "type": "tests", "label": "baseline", "summary": "26 passed, 0 failed, 0 skipped", "passed": 26, "failed": 0, "skipped": 0, "total": 26, "collection_error": false}
+{"seq": 7, "t": 21.508, "type": "stage", "name": "baseline", "status": "done", "detail": "sqlalchemy==1.4.54, 26 passed, 0 failed, 0 skipped"}
+{"seq": 8, "t": 21.509, "type": "stage", "name": "bump", "status": "start", "detail": "sqlalchemy>=2,<3"}
+{"seq": 9, "t": 21.756, "type": "pins", "changes": [{"file": "pyproject.toml", "before": "sqlalchemy = {extras = [\"mypy\"], version = \"^1.4.45\"}", "after": "sqlalchemy = {extras = [\"mypy\"], version = \">=2,<3\"}"}]}
+{"seq": 10, "t": 22.25, "type": "log", "msg": "manifest install failed after the bump (likely a co-dependency pin); forcing the target and leaving the conflict to the planner", "level": "info"}

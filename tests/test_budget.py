@@ -82,3 +82,24 @@ def test_negative_estimate_rejected(tmp_path):
     b = make(tmp_path)
     with pytest.raises(ValueError):
         b.reserve(run="a", kind="llm", label="x", usd=-1)
+
+
+def test_torn_write_counts_as_spend_not_zero(tmp_path):
+    """A crash can leave garbage at the end of the ledger; it must make the guard stricter."""
+    b = make(tmp_path, usd_total=1.0)
+    b.reserve(run="a", kind="llm", label="x", usd=0.2).settle(usd=0.2)
+    with b.ledger.open("ab") as f:
+        f.write(b'{"type": "settle", "id": "tr' + b"\x00" * 64)
+    t = b.totals()
+    assert t.usd_total == pytest.approx(0.2 + 0.05)
+    b.reserve(run="b", kind="llm", label="x", usd=0.1)  # still usable after the crash
+    # ...and the new entry is recorded on its own line, not glued to the garbage
+    assert b.totals().usd_total == pytest.approx(0.2 + 0.05 + 0.1)
+
+
+def test_manual_adjustment_counts(tmp_path):
+    b = make(tmp_path, usd_total=1.0)
+    with b.ledger.open("a") as f:
+        f.write(json.dumps({"type": "adjust", "ts": datetime.now(timezone.utc).isoformat(), "usd": 0.9}) + "\n")
+    with pytest.raises(BudgetExceeded):
+        b.reserve(run="a", kind="llm", label="x", usd=0.2)

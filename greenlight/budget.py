@@ -28,6 +28,9 @@ class BudgetExceeded(RuntimeError):
     pass
 
 
+UNREADABLE_USD = 0.05  # assumed cost of each ledger line that can't be parsed
+
+
 def _env_float(name: str, default: float) -> float:
     raw = os.environ.get(name)
     return float(raw) if raw else default
@@ -100,16 +103,32 @@ class Budget:
     # ---------- ledger ----------
 
     def _append(self, entry: dict) -> None:
+        prefix = ""
+        if self.ledger.exists() and self.ledger.stat().st_size:
+            with self.ledger.open("rb") as f:
+                f.seek(-1, os.SEEK_END)
+                if f.read(1) != b"\n":  # a torn last line must not swallow this entry
+                    prefix = "\n"
         with self.ledger.open("a", encoding="utf-8") as f:
-            f.write(json.dumps(entry) + "\n")
+            f.write(prefix + json.dumps(entry) + "\n")
+            f.flush()
+            os.fsync(f.fileno())  # a power cut must not lose spend records
 
     def _entries(self) -> list[dict]:
+        """Ledger entries. A line that can't be read (e.g. a torn write after a crash) becomes a
+        conservative 'unreadable' charge instead of being ignored."""
         if not self.ledger.exists():
             return []
         out = []
-        for line in self.ledger.read_text(encoding="utf-8").splitlines():
-            if line.strip():
+        raw = self.ledger.read_bytes().decode("utf-8", errors="replace")
+        for line in raw.splitlines():
+            line = line.strip().strip("\x00")
+            if not line:
+                continue
+            try:
                 out.append(json.loads(line))
+            except json.JSONDecodeError:
+                out.append({"type": "unreadable"})
         return out
 
     def totals(self) -> Totals:
@@ -117,12 +136,19 @@ class Budget:
         today = datetime.now(timezone.utc).date().isoformat()
         reserved: dict[str, dict] = {}
         settled: dict[str, dict] = {}
+        t = Totals()
         for e in self._entries():
             if e["type"] == "reserve":
                 reserved[e["id"]] = e
             elif e["type"] == "settle":
                 settled[e["id"]] = e
-        t = Totals()
+            elif e["type"] == "unreadable":
+                t.usd_total += UNREADABLE_USD
+            elif e["type"] == "adjust":  # manual correction, e.g. after reconciling with the billing page
+                t.usd_total += e.get("usd", 0.0)
+                if e.get("ts", "")[:10] == today:
+                    t.usd_today += e.get("usd", 0.0)
+                t.tavily_credits += e.get("credits", 0)
         for rid, r in reserved.items():
             s = settled.get(rid)
             usd = s["usd"] if s else r["usd"]

@@ -1,0 +1,6 @@
+{"seq": 0, "t": 0.001, "type": "run", "run_id": "aurorae-1791634684", "source": "https://github.com/vintasoftware/aurorae", "ref": "fe04774854783bef9b6b4c9d01b557fbd0d5e727", "lib": "pydantic", "to_major": 2, "spec": ">=2,<3", "executor": "docker", "model_override": null, "use_research": true}
+{"seq": 1, "t": 0.254, "type": "stage", "name": "prepare", "status": "start", "detail": "https://github.com/vintasoftware/aurorae"}
+{"seq": 2, "t": 5.135, "type": "log", "msg": "commit fe0477485478", "level": "info"}
+{"seq": 3, "t": 5.507, "type": "project", "manifests": ["setup.py", "setup.cfg", "pyproject.toml"], "python": "3.11", "test_cmd": "/venv/bin/python -m pytest -q -rfE -p no:cacheprovider --timeout=120 --junitxml=/tmp/greenlight-junit.xml -o junit_family=xunit2 tests/"}
+{"seq": 4, "t": 10.027, "type": "log", "msg": "install failed on python 3.11: hint: This error likely indicates that you need to install a library that provides \"longintrepr.h\" for `httptools@0.2.0`", "level": "info"}
+{"seq": 5, "t": 10.027, "type": "log", "msg": "RuntimeError: could not install the project (tried python 3.11)", "level": "error"}
