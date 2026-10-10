@@ -52,6 +52,12 @@ These are notes from building Greenlight, written down as things happened. Each 
 - **Nemotron 3 Ultra:** an excellent planner. Fast for its size (the endpoint page says about 520 tok/s), and its JSON plans were consistently usable.
 - **Nemotron 3 Super:** a reliable tool-calling editor. It recovered from failed patches on its own and produced idiomatic pydantic v2 code (`RootModel`, `model_validator(mode="after")`, `pydantic-settings`).
 - **Nemotron 3.5 Lightning:** remarkable price and speed ($0.06/$0.24 per 1M, about 300 tok/s). It was ideal for digesting docs (348 grounded migration rules from the pydantic guide for under $0.01). As an autonomous code editor it stalled where Super succeeded, so we route it to digestion and writing tasks.
+- **Agentic editing: Super versus a small frontier model.** To save credits, we developed the agent loop against a cheaper stand-in model behind the same OpenAI-compatible interface. On our 12-repo eval, the identical harness went fully green on 11/12 with the stand-in, but 4/11 with Nemotron 3 Super as the editor.
+  - Two patterns explain most of the gap:
+    1. Super issues one small tool call per turn (rarely parallel calls or whole-file rewrites), so multi-file migrations take 80–120 steps.
+    2. Long pytest tracebacks with library source in them hide the one repo frame that matters.
+  - One-shot whole-file rewrites close much of the gap: Super is good at "here is the file and the rules, return the migrated file".
+  - Suggestion: publish agentic-coding guidance for Super, covering parallel tool calls and when to prefer whole-file edits. It may also be worth tuning Super toward multi-edit turns.
 - **Degenerate loops:** With Ultra as the editor, it repeated identical `read_file`/`search_docs` calls. We added a repeat guard in our tool layer. Documenting recommended agent-loop settings (temperature, repetition handling) would help.
 
 ## Tavily
