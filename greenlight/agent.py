@@ -56,7 +56,7 @@ class UpgradeSpec:
     spec: str | None = None     # override constraint, default ">=N,<N+1"
     python: str | None = None
     test_cmd: str | None = None
-    allow_test_edits: bool = False
+    test_policy: str = "audited"      # frozen | audited (API-only test migrations) | free
     max_iterations: int = 6
     steps_per_iteration: int = 40
     max_minutes: float = 20
@@ -121,7 +121,9 @@ Write a migration plan as JSON:
  "risks": ["behaviour changes to watch for"]}
 
 Rules:
-- Change library/application code only. Test files are the contract and must not be edited.
+- Change library/application code. Test files are the contract: only touch one when the test itself
+  uses a removed/renamed API (e.g. imports BaseSettings from pydantic) and then only migrate that API;
+  never change, remove or skip an assertion or a test.
 - Prefer the real new APIs over compatibility layers (never use pydantic.v1 or similar shims).
 - Cover every call site of a changed API, not only the ones the failing tests hit.
 - Keep behaviour identical; note any semantic changes (defaults, validation order) as steps or risks.
@@ -139,7 +141,9 @@ Use the tools efficiently; every turn costs time and money:
 - Then run the tests. Re-read a file before patching it again.
 - `apply_patch` needs an exact, unique `search` snippet copied from read_file output (without the line-number prefix).
 - Tag each patch or rewrite with the rule id(s) it applies, e.g. "R14 R37".
-- Test files are read-only. Never loosen or remove the {lib} upgrade pin. Never use compatibility shims (e.g. pydantic.v1),
+- Fix library code first. Edit a test file ONLY to migrate an API the test itself uses (imports, renamed
+  calls); assertions, test functions and markers must stay as they are (the tool enforces this).
+- Never loosen or remove the {lib} upgrade pin. Never use compatibility shims (e.g. pydantic.v1),
   and never create a module named after the library to fake the old API.
 - If a feature moved to another package, add it to the requirements file, then call `reinstall`.
 - When a failure isn't covered by the rules, call `search_docs` with a precise query.
@@ -207,11 +211,11 @@ class Upgrader:
             if not (baseline.passed - bumped.passed):
                 res.status, res.headline = "noop", "tests already pass after the bump; only the pin changed"
                 res.final = _run_stats(bumped)
-                res.verify = verify(ws, baseline, bumped, s.lib, s.to_major, s.allow_test_edits).as_dict()
+                res.verify = verify(ws, baseline, bumped, s.lib, s.to_major, s.test_policy).as_dict()
                 return self._finish(res, ws)
             sheet = self._research() if s.use_research else RuleSheet(s.lib, 0, s.to_major)
             final = self._fix(ws, baseline, bumped, sheet, res)
-            rep = verify(ws, baseline, final, s.lib, s.to_major, s.allow_test_edits)
+            rep = verify(ws, baseline, final, s.lib, s.to_major, s.test_policy)
             self.ev.emit("verify", **rep.as_dict())
             res.final = _run_stats(final)
             res.verify = rep.as_dict()
@@ -433,7 +437,7 @@ class Upgrader:
             return render(group_failures(tr), tr, limit_chars=7000)
 
         lookup = (lambda q: self.researcher.lookup(s.lib, q)) if s.use_research else (lambda q: "search disabled")
-        tb = ToolBox(ws, self.ev, s.lib, s.target_spec, lookup, run_tests_tool, s.allow_test_edits)
+        tb = ToolBox(ws, self.ev, s.lib, s.target_spec, lookup, run_tests_tool, s.test_policy)
 
         progress = ""
         if s.bulk:

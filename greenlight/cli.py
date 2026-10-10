@@ -21,7 +21,7 @@ def _upgrade(a: argparse.Namespace) -> int:
         print("target must look like pydantic@2", file=sys.stderr)
         return 2
     spec = UpgradeSpec(source=a.source, lib=lib, to_major=int(major), ref=a.ref, python=a.python,
-                       test_cmd=a.test_cmd, allow_test_edits=a.allow_test_edits,
+                       test_cmd=a.test_cmd, test_policy=a.test_policy,
                        max_iterations=a.max_iterations, max_minutes=a.max_minutes,
                        model_override=a.model, use_research=not a.no_research, editor=a.editor,
                        bulk=not a.no_bulk)
@@ -66,7 +66,8 @@ def main(argv: list[str] | None = None) -> int:
     u.add_argument("--ref", help="commit, branch or tag to start from")
     u.add_argument("--python", help="force a Python version, e.g. 3.10")
     u.add_argument("--test-cmd", help="custom test command (must write junit xml to /tmp/greenlight-junit.xml)")
-    u.add_argument("--allow-test-edits", action="store_true")
+    u.add_argument("--test-policy", default="audited", choices=["audited", "frozen", "free"],
+                   help="audited: tests may be migrated to the new API but never weakened (default)")
     u.add_argument("--max-iterations", type=int, default=6)
     u.add_argument("--max-minutes", type=float, default=20)
     u.add_argument("--model", help="force one model for every role (ablation)")

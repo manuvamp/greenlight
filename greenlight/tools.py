@@ -28,6 +28,41 @@ def is_test_file(path: str) -> bool:
     return bool(TEST_PATH.search(path.replace("\\", "/")))
 
 
+PROTECTED = re.compile(r"\bassert\b|pytest\.raises|\bdef test_|@pytest\.mark|\.assert\w*\(|self\.assert|approx\(")
+SKIPPY = re.compile(r"pytest\.mark\.(skip|xfail)|pytest\.skip\(|unittest\.skip|@skip")
+
+
+def audit_test_edit(old: str, new: str) -> list[str]:
+    """Test files may be migrated (imports, renamed API calls) but not weakened.
+
+    Every removed line that carries an assertion, a test definition or a marker must come back as a
+    near-identical line (same kind of check, mostly the same tokens). No new skip/xfail. Returns the
+    problems found; an empty list means the edit is an API-only migration.
+    """
+    old_lines = [ln.strip() for ln in old.splitlines()]
+    new_lines = [ln.strip() for ln in new.splitlines()]
+    sm = difflib.SequenceMatcher(a=old_lines, b=new_lines, autojunk=False)
+    removed, added = [], []
+    for tag, i1, i2, j1, j2 in sm.get_opcodes():
+        if tag in ("replace", "delete"):
+            removed += old_lines[i1:i2]
+        if tag in ("replace", "insert"):
+            added += new_lines[j1:j2]
+    problems = []
+    for ln in removed:
+        if not PROTECTED.search(ln):
+            continue
+        kind = PROTECTED.search(ln).group(0)
+        if not any(kind in a and difflib.SequenceMatcher(a=ln, b=a).ratio() >= 0.6 for a in added):
+            problems.append(f"removes or rewrites a check: {ln[:120]}")
+    for ln in added:
+        if SKIPPY.search(ln) and ln not in removed:
+            problems.append(f"adds a skip/xfail: {ln[:120]}")
+    if len(re.findall(r"^\s*def test_", new, re.M)) < len(re.findall(r"^\s*def test_", old, re.M)):
+        problems.append("removes test functions")
+    return problems
+
+
 def shadows_library(path: str, lib: str) -> bool:
     """A file or package named after the upgraded library would hijack `import <lib>`: a fake upgrade."""
     mod = re.sub(r"[-.]", "_", lib).lower()
@@ -115,7 +150,7 @@ class ToolBox:
     target_spec: str
     lookup: Callable[[str], str]
     on_tests: Callable[[str], str]  # runs tests, returns condensed text
-    allow_test_edits: bool = False
+    test_policy: str = "audited"  # frozen | audited | free
     patches: list[Patch] = field(default_factory=list)
     finished: str | None = None
     state: int = 0                      # bumps on every successful patch/reinstall
@@ -181,9 +216,6 @@ class ToolBox:
 
     def t_apply_patch(self, path: str, search: str, replace: str, rule: str = "") -> str:
         path = norm_path(path)
-        if is_test_file(path) and not self.allow_test_edits:
-            return ("REFUSED: test files are the contract and can't be edited in this run. "
-                    "Fix the library code so the existing tests pass.")
         try:
             current = self.ws.sb.read_file(path)
         except FileNotFoundError:
@@ -205,6 +237,9 @@ class ToolBox:
             if n > 1:
                 return f"ERROR: search text matches {n} places in {path}; include more context to make it unique"
             new = current.replace(search, replace, 1)
+        refusal = self._test_guard(path, current or "", new)
+        if refusal:
+            return refusal
         if "requirements" in path or "constraints" in path or path.endswith(("pyproject.toml", "setup.py", "setup.cfg")):
             if self._rolls_back_pin(current or "", new):
                 return f"REFUSED: that edit loosens or removes the {self.lib}{self.target_spec} upgrade pin"
@@ -219,12 +254,13 @@ class ToolBox:
 
     def t_rewrite_file(self, path: str, content: str, rule: str = "") -> str:
         path = norm_path(path)
-        if is_test_file(path) and not self.allow_test_edits:
-            return "REFUSED: test files are the contract and can't be edited in this run."
         try:
             current = self.ws.sb.read_file(path)
         except FileNotFoundError:
             return f"ERROR: {path} does not exist (use apply_patch with search=\"\" to create files)"
+        refusal = self._test_guard(path, current, content)
+        if refusal:
+            return refusal
         old_n, new_n = len(current.splitlines()), len(content.splitlines())
         if old_n >= 20 and new_n < 0.6 * old_n:
             return (f"REFUSED: the rewrite has {new_n} lines but the file has {old_n}; it looks truncated. "
@@ -268,6 +304,19 @@ class ToolBox:
         return "OK"
 
     # ---------- helpers ----------
+
+    def _test_guard(self, path: str, old: str, new: str) -> str | None:
+        """Tests are the contract. They may be migrated to the new API, never weakened."""
+        if not is_test_file(path) or self.test_policy == "free":
+            return None
+        if self.test_policy == "frozen":
+            return ("REFUSED: test files are read-only in this run. Fix the library code so the existing "
+                    "tests pass.")
+        problems = audit_test_edit(old, new)
+        if problems:
+            return ("REFUSED: test files may only be migrated to the new API (imports, renamed calls), "
+                    "never weakened:\n- " + "\n- ".join(problems[:5]))
+        return None
 
     def _rolls_back_pin(self, before: str, after: str) -> bool:
         lib = re.escape(self.lib)

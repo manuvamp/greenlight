@@ -15,3 +15,28 @@ def test_paths():
     assert norm_path("./x.py") == "x.py"
     assert is_test_file("tests/test_a.py") and is_test_file("pkg/conftest.py") and is_test_file("a_test.py")
     assert not is_test_file("pkg/testing_utils.py")
+
+
+from greenlight.tools import audit_test_edit  # noqa: E402
+
+OLD = """from pydantic import BaseSettings
+
+def test_dump():
+    m = Model(a=1)
+    assert m.dict() == {"a": 1}
+    with pytest.raises(ValidationError):
+        Model(a="x")
+"""
+
+
+def test_api_migration_of_tests_is_allowed():
+    new = OLD.replace("from pydantic import BaseSettings", "from pydantic_settings import BaseSettings") \
+             .replace("m.dict()", "m.model_dump()")
+    assert audit_test_edit(OLD, new) == []
+
+
+def test_weakening_tests_is_refused():
+    assert audit_test_edit(OLD, OLD.replace('    assert m.dict() == {"a": 1}\n', ""))
+    assert audit_test_edit(OLD, OLD.replace('assert m.dict() == {"a": 1}', 'assert True'))
+    assert audit_test_edit(OLD, "import pytest\n@pytest.mark.skip\n" + OLD)
+    assert audit_test_edit(OLD, OLD.replace("def test_dump", "def helper_dump"))
