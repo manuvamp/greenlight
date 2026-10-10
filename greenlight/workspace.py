@@ -163,7 +163,10 @@ class Workspace:
         python = python_hint or self._guess_python(texts)
 
         cmds: list[str] = []
-        req_files = [m for m in manifests if m.endswith((".txt", ".in")) and "constraint" not in m]
+        # Optional/docs requirement files often list things that can't install (commercial solvers,
+        # Sphinx themes); they're still bumped, just not installed.
+        req_files = [m for m in manifests if m.endswith((".txt", ".in"))
+                     and not re.search(r"(?i)constraint|optional|docs?[-_/]|[-_/]docs?\b|extra", m)]
         has_pkg = any(m in ("pyproject.toml", "setup.py", "setup.cfg") for m in manifests)
         if has_pkg:
             extras = self._extras(texts)
