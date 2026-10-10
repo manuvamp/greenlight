@@ -1903,3 +1903,25 @@ a.source-card:hover {
   .meter { flex-direction: column; align-items: stretch; }
   .ring { align-self: center; }
 }
+
+/* ---------- refinements ---------- */
+
+.markdown th,
+.markdown td {
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.markdown td:first-child,
+.markdown th:first-child {
+  white-space: nowrap;
+}
+
+.markdown td:last-child {
+  min-width: 90px;
+}
+
+.diff-file > .diff-table {
+  max-height: 560px;
+  overflow: auto;
+}

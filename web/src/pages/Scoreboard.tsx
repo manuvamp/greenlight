@@ -165,7 +165,7 @@ export function ScoreboardPage() {
                             </div>
                           </td>
                           <td className="mono nowrap">
-                            {r.lib} <span className="muted-2">{r.from_version ?? "?"} → {r.to_version ?? "?"}</span>
+                            {r.lib} <span className="muted-2">{r.from_version || "?"} → {r.to_version || "?"}</span>
                           </td>
                           <td><StatusPill status={r.status} size="sm" /></td>
                           <td>

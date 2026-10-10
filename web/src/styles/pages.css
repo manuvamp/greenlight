@@ -908,6 +908,11 @@ a.replay-card:hover .rc-go {
 
 /* ================= RESPONSIVE ================= */
 
+@media (max-width: 1600px) {
+  .score-layout { grid-template-columns: 1fr; }
+  .case-cell { max-width: 420px; }
+}
+
 @media (max-width: 1180px) {
   .how { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .how-step:nth-child(4) { border-right: 0; }
@@ -929,4 +934,10 @@ a.replay-card:hover .rc-go {
   .how { grid-template-columns: 1fr 1fr; }
   .how-step::after { display: none; }
   .replay-grid { grid-template-columns: 1fr; }
+}
+
+.hero-visual {
+  justify-self: end;
+  width: 100%;
+  max-width: 680px;
 }

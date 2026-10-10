@@ -13,3 +13,4 @@ runs-*.log
 evals-*.log
 evals/results/precheck-*/
 evals/results/eval-1/
+evals/results/try-*/

@@ -15,7 +15,7 @@ export const ResearchPanel = memo(function ResearchPanel({
   active: boolean;
 }) {
   return (
-    <Panel title="Research" icon="book" className="research-panel" aside={<span className="tavily-badge">Tavily</span>}>
+    <Panel title="Research" icon="book" className="research-panel" aside={<>{cached && <span className="mono muted-2">rule sheet cached</span>}<span className="tavily-badge">Tavily</span></>}>
       <div className="research-stats">
         <div className="rs">
           <span className="rs-val mono">{rulesCount ?? "—"}</span>
@@ -27,7 +27,7 @@ export const ResearchPanel = memo(function ResearchPanel({
         </div>
         <div className="rs">
           <span className="rs-val mono">{credits}</span>
-          <span className="rs-lab">{cached && credits === 0 ? "cached" : ops ? `credits · ${ops}` : "credits"}</span>
+          <span className="rs-lab">{ops ? `credits · ${ops} calls` : "Tavily credits"}</span>
         </div>
       </div>
       {sources.length === 0 ? (
