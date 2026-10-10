@@ -10,3 +10,5 @@ web/dist/
 runs/
 scripts/*.out.json
 runs-*.log
+evals-*.log
+evals/results/precheck-*/

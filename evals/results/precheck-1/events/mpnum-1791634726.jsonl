@@ -1,9 +1,0 @@
-{"seq": 0, "t": 0.001, "type": "run", "run_id": "mpnum-1791634726", "source": "https://github.com/dsuess/mpnum", "ref": "32c11b699ad748836f027b7ab2aa3ca236586e56", "lib": "numpy", "to_major": 2, "spec": ">=2,<3", "executor": "docker", "model_override": null, "use_research": true}
-{"seq": 1, "t": 0.272, "type": "stage", "name": "prepare", "status": "start", "detail": "https://github.com/dsuess/mpnum"}
-{"seq": 2, "t": 3.368, "type": "log", "msg": "commit 32c11b699ad7", "level": "info"}
-{"seq": 3, "t": 3.76, "type": "project", "manifests": ["requirements.txt", "setup.py", "setup.cfg"], "python": "3.11", "test_cmd": "/venv/bin/python -m pytest -q -rfE -p no:cacheprovider --timeout=120 --junitxml=/tmp/greenlight-junit.xml -o junit_family=xunit2 tests"}
-{"seq": 4, "t": 5.602, "type": "log", "msg": "install failed on python 3.11: packaging.version.InvalidVersion: Invalid version: 'unknown'", "level": "info"}
-{"seq": 5, "t": 6.876, "type": "log", "msg": "install failed on python 3.10: packaging.version.InvalidVersion: Invalid version: 'unknown'", "level": "info"}
-{"seq": 6, "t": 8.212, "type": "log", "msg": "install failed on python 3.12: packaging.version.InvalidVersion: Invalid version: 'unknown'", "level": "info"}
-{"seq": 7, "t": 9.72, "type": "log", "msg": "install failed on python 3.9: packaging.version.InvalidVersion: Invalid version: 'unknown'", "level": "info"}
-{"seq": 8, "t": 9.721, "type": "log", "msg": "RuntimeError: could not install the project (tried python 3.11, 3.10, 3.12, 3.9)", "level": "error"}

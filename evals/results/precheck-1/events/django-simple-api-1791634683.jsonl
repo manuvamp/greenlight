@@ -1,6 +1,0 @@
-{"seq": 0, "t": 0.001, "type": "run", "run_id": "django-simple-api-1791634683", "source": "https://github.com/Django-Simple-API/django-simple-api", "ref": "9dd203b0899dbe3f736866702858c6e4a017a7e8", "lib": "pydantic", "to_major": 2, "spec": ">=2,<3", "executor": "docker", "model_override": null, "use_research": true}
-{"seq": 1, "t": 0.227, "type": "stage", "name": "prepare", "status": "start", "detail": "https://github.com/Django-Simple-API/django-simple-api"}
-{"seq": 2, "t": 3.033, "type": "log", "msg": "commit 9dd203b0899d", "level": "info"}
-{"seq": 3, "t": 3.234, "type": "project", "manifests": ["pyproject.toml"], "python": "3.11", "test_cmd": "/venv/bin/python -m pytest -q -rfE -p no:cacheprovider --timeout=120 --junitxml=/tmp/greenlight-junit.xml -o junit_family=xunit2"}
-{"seq": 4, "t": 9.857, "type": "log", "msg": "install failed on python 3.11: hint: Build failures usually indicate a problem with the package or the build environment", "level": "info"}
-{"seq": 5, "t": 9.857, "type": "log", "msg": "RuntimeError: could not install the project (tried python 3.11)", "level": "error"}

@@ -1,7 +1,0 @@
-{"seq": 0, "t": 0.001, "type": "run", "run_id": "queueing-tool-1791634698", "source": "https://github.com/djordon/queueing-tool", "ref": "c5dbd9da28fb0f50c57b49643a7ace2cd427826e", "lib": "numpy", "to_major": 2, "spec": ">=2,<3", "executor": "docker", "model_override": null, "use_research": true}
-{"seq": 1, "t": 0.234, "type": "stage", "name": "prepare", "status": "start", "detail": "https://github.com/djordon/queueing-tool"}
-{"seq": 2, "t": 5.139, "type": "log", "msg": "commit c5dbd9da28fb", "level": "info"}
-{"seq": 3, "t": 5.444, "type": "project", "manifests": ["setup.py", "pyproject.toml"], "python": "3.11", "test_cmd": "/venv/bin/python -m pytest -q -rfE -p no:cacheprovider --timeout=120 --junitxml=/tmp/greenlight-junit.xml -o junit_family=xunit2 tests -o addopts=''"}
-{"seq": 4, "t": 14.681, "type": "stage", "name": "prepare", "status": "done", "detail": "python 3.11, deps installed"}
-{"seq": 5, "t": 14.682, "type": "stage", "name": "baseline", "status": "start"}
-{"seq": 6, "t": 14.909, "type": "log", "msg": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)", "level": "error"}

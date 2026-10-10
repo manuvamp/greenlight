@@ -1,9 +1,0 @@
-{"seq": 0, "t": 0.001, "type": "run", "run_id": "pydantic-vault-1791634693", "source": "https://github.com/nymous/pydantic-vault", "ref": "7137cea456d791baf84a9f0f134c593b0afc4ff3", "lib": "pydantic", "to_major": 2, "spec": ">=2,<3", "executor": "docker", "model_override": null, "use_research": true}
-{"seq": 1, "t": 0.232, "type": "stage", "name": "prepare", "status": "start", "detail": "https://github.com/nymous/pydantic-vault"}
-{"seq": 2, "t": 3.666, "type": "log", "msg": "commit 7137cea456d7", "level": "info"}
-{"seq": 3, "t": 3.861, "type": "project", "manifests": ["pyproject.toml"], "python": "3.11", "test_cmd": "/venv/bin/python -m pytest -q -rfE -p no:cacheprovider --timeout=120 --junitxml=/tmp/greenlight-junit.xml -o junit_family=xunit2 -o addopts=''"}
-{"seq": 4, "t": 7.672, "type": "stage", "name": "prepare", "status": "done", "detail": "python 3.11, deps installed"}
-{"seq": 5, "t": 7.673, "type": "stage", "name": "baseline", "status": "start"}
-{"seq": 6, "t": 8.361, "type": "tests", "label": "baseline", "summary": "0 passed, 0 failed, 0 skipped (collection error)", "passed": 0, "failed": 0, "skipped": 0, "total": 0, "collection_error": true}
-{"seq": 7, "t": 8.361, "type": "log", "msg": "ImportError while loading conftest '/repo/tests/conftest.py'.\ntests/conftest.py:4: in <module>\n    from pyfakefs.fake_filesystem import FakeFilesystem\nE   ModuleNotFoundError: No module named 'pyfakefs'", "level": "info"}
-{"seq": 8, "t": 8.469, "type": "log", "msg": "JSONDecodeError: Expecting value: line 1 column 1 (char 0)", "level": "error"}
