@@ -12,3 +12,4 @@ scripts/*.out.json
 runs-*.log
 evals-*.log
 evals/results/precheck-*/
+evals/results/eval-1/
