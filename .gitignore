@@ -16,3 +16,4 @@ evals/results/eval-1/
 evals/results/try-*/
 server.log
 runs/live/
+evals/results/standin-*/

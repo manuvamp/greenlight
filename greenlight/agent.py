@@ -180,7 +180,7 @@ class Upgrader:
     def run(self) -> RunResult:
         s = self.spec
         self.ev.emit("run", run_id=self.run_id, source=s.source, ref=s.ref, lib=s.lib, to_major=s.to_major,
-                     spec=s.target_spec, executor=self.executor.name,
+                     spec=s.target_spec, executor=self.executor.name, backend=self.llm.backend,
                      model_override=s.model_override, use_research=s.use_research)
         res = RunResult(self.run_id, "error", "", s.lib)
         sb = None

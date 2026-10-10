@@ -19,7 +19,7 @@ import openai
 from openai import OpenAI
 
 from .budget import Budget
-from .models import ALL, THINKING, Model, Role, route
+from .models import ALL, STANDIN, THINKING, Model, Role, route
 
 BASE_URL = os.environ.get("NEBIUS_BASE_URL", "https://api.tokenfactory.nebius.com/v1/")
 
@@ -48,7 +48,16 @@ class CallRecord:
     latency_s: float
     ok: bool
     note: str = ""
+    backend: str = "nebius"
+    served_by: str = ""
     ts: float = field(default_factory=time.time)
+
+
+class _FreeReservation:
+    """Stand-in calls cost nothing on Token Factory, so they don't touch the budget ledger."""
+
+    def settle(self, **_kw) -> None:
+        pass
 
 
 @dataclass
@@ -82,10 +91,18 @@ class LLM:
         model_override: str | None = None,
         timeout: float = 180.0,
     ):
-        key = api_key or os.environ.get("NEBIUS_API_KEY")
-        if not key:
-            raise LLMError("NEBIUS_API_KEY is not set")
-        self.client = OpenAI(base_url=BASE_URL, api_key=key, timeout=timeout, max_retries=0)
+        # nebius = the real thing (Nemotron on Token Factory, metered and capped).
+        # standin = free same-tier models on a local OpenAI-compatible proxy, for developing the agent loop.
+        self.backend = os.environ.get("GREENLIGHT_BACKEND", "nebius").lower()
+        if self.backend == "standin":
+            self.client = OpenAI(base_url=os.environ.get("GREENLIGHT_STANDIN_URL", "http://127.0.0.1:8317/v1"),
+                                 api_key=os.environ.get("GREENLIGHT_STANDIN_KEY", "123456"),
+                                 timeout=timeout, max_retries=0)
+        else:
+            key = api_key or os.environ.get("NEBIUS_API_KEY")
+            if not key:
+                raise LLMError("NEBIUS_API_KEY is not set")
+            self.client = OpenAI(base_url=BASE_URL, api_key=key, timeout=timeout, max_retries=0)
         self.budget = budget or Budget()
         self.model_override = model_override
         self.listeners: list[Callable[[CallRecord], None]] = []
@@ -131,14 +148,21 @@ class LLM:
                    max_tokens, think, temperature, json_mode) -> LLMResult:
         est_in = estimate_tokens(messages, tools)
         worst = model.cost(est_in, max_tokens)
-        res = self.budget.reserve(run=run, kind="llm", label=f"{role.value}:{model.id}", usd=worst)
+        standin = self.backend == "standin"
+        if standin:
+            res = _FreeReservation()  # nothing reaches Token Factory, nothing is spent
+            served = STANDIN[model.id]
+        else:
+            res = self.budget.reserve(run=run, kind="llm", label=f"{role.value}:{model.id}", usd=worst)
+            served = model.id
 
         kwargs: dict[str, Any] = {
-            "model": model.id,
+            "model": served,
             "messages": messages,
             "max_tokens": max_tokens,
-            "extra_body": {"chat_template_kwargs": {"enable_thinking": think}},
         }
+        if not standin:
+            kwargs["extra_body"] = {"chat_template_kwargs": {"enable_thinking": think}}
         if tools:
             kwargs["tools"] = tools
             if tool_choice:
@@ -171,6 +195,7 @@ class LLM:
         tout = getattr(usage, "completion_tokens", None)
         if tout is None:
             tout = max_tokens
+        # In stand-in mode `usd` is what the same tokens would cost on Nemotron (an estimate, not a charge).
         usd = model.cost(tin, tout)
         res.settle(usd=usd, model=model.id, tokens_in=tin, tokens_out=tout)
 
@@ -182,7 +207,8 @@ class LLM:
         tool_calls = [tc.model_dump() for tc in (msg.tool_calls or [])]
         finish = choice.finish_reason or ""
 
-        rec = CallRecord(run, role.value, model.id, think, tin, tout, usd, latency, True, finish)
+        rec = CallRecord(run, role.value, model.id, think, tin, tout, usd, latency, True, finish,
+                         backend=self.backend, served_by=served)
         self._emit(rec)
 
         if finish == "length" and not content.strip() and not tool_calls:

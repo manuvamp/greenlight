@@ -60,6 +60,17 @@ THINKING: dict[Role, bool] = {
 }
 
 
+# Development stand-ins (GREENLIGHT_BACKEND=standin): free models of a similar tier, served by a local
+# OpenAI-compatible proxy, so the agent loop can be iterated on without spending Token Factory credit.
+# Every result that counts (eval scoreboard, replays, demo) is produced on the real Nemotron models.
+STANDIN = {
+    ULTRA.id: "claude-sonnet-5-5",
+    SUPER.id: "claude-haiku-5-5",
+    LIGHTNING.id: "gemini-3.1-flash-lite",
+    NANO.id: "gemini-3.1-flash-lite",
+}
+
+
 def route(role: Role, override: str | None = None) -> Model:
     """Model for a role. `override` (a model id) forces one model, e.g. for the all-Ultra ablation."""
     if override:

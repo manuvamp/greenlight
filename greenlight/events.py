@@ -60,8 +60,10 @@ def console_printer(ev: dict) -> None:
     elif t == "tests":
         print(f"{ts}   tests [{ev['label']}]: {ev['summary']}", flush=True)
     elif t == "llm":
-        print(f"{ts}   ⚙ {ev['role']:9s} {ev['model_label']:24s} {ev['tokens_in']:6d}→{ev['tokens_out']:5d} tok "
-              f"${ev['usd']:.4f} {ev['latency_s']:.1f}s{' think' if ev['thinking'] else ''}", flush=True)
+        via = f" via {ev['served_by']}" if ev.get("backend") == "standin" else ""
+        cost = f"~${ev['usd']:.4f} est" if via else f"${ev['usd']:.4f}"
+        print(f"{ts}   ⚙ {ev['role']:9s} {ev['model_label']:24s}{via} {ev['tokens_in']:6d}→{ev['tokens_out']:5d} tok "
+              f"{cost} {ev['latency_s']:.1f}s{' think' if ev['thinking'] else ''}", flush=True)
     elif t == "tool":
         print(f"{ts}   🔧 {ev['name']}({ev.get('brief', '')}) → {ev.get('result_brief', '')}", flush=True)
     elif t == "source":
