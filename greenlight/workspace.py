@@ -183,7 +183,7 @@ class Workspace:
             cmds.append(f"uv pip install --python {PY} " + " ".join(shlex.quote(d) for d in self.extra_deps))
 
         if not test_cmd:
-            test_cmd = (f"{PY} -m pytest -q -rfE -p no:cacheprovider --timeout=120 "
+            test_cmd = (f"{PY} -m pytest -q -rfE --tb=short -p no:cacheprovider --timeout=120 "
                         f"--junitxml={JUNIT} -o junit_family=xunit2")
             if test_args:
                 test_cmd += " " + test_args
