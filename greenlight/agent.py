@@ -20,7 +20,7 @@ from pathlib import Path
 from .budget import Budget, BudgetExceeded
 from .events import EventLog
 from .executor.base import Executor
-from .llm import LLM, LLMError, record_to_dict
+from .llm import LLM, LLMError, LLMTruncated, record_to_dict
 from .manifest import requirement_spec
 from .models import Role
 from .research import Researcher, RuleSheet
@@ -460,7 +460,14 @@ class Upgrader:
                     break
                 try:
                     r = self.llm.chat(Role.EDIT, _trim_history(messages), run=self.run_id, tools=SCHEMAS,
-                                      max_tokens=4096, temperature=0.2, model_id=editor.id)
+                                      max_tokens=8192, temperature=0.2, model_id=editor.id)
+                except LLMTruncated:
+                    # Usually a whole-file rewrite that didn't fit. Recover instead of failing the run.
+                    self.ev.log("editor reply hit the output limit; asking for smaller edits")
+                    messages.append({"role": "user", "content":
+                                     "Your last reply was cut off at the output limit and was lost. Make smaller "
+                                     "changes: use apply_patch with focused snippets instead of rewriting big files."})
+                    continue
                 except BudgetExceeded as e:
                     self.ev.log(f"budget guard: {e}; stopping the fix loop to verify and report")
                     out_of_budget = True
