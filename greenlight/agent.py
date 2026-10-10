@@ -564,18 +564,33 @@ class Upgrader:
                         + (f"Dependency changes in the plan: {json.dumps(deps)}\n" if deps and not path.endswith('.py') else "")
                         + f"\nFile `{path}`:\n```\n{current}\n```"}]
             budget = min(16000, int(len(current) / 2.5) + 1000)
+
+            def check(text: str) -> tuple[str | None, str]:
+                new = _code_block(text)
+                if new is None:
+                    return None, "no code block in the reply"
+                if new.strip() == current.strip():
+                    return None, "unchanged"
+                if path.endswith(".py"):
+                    try:
+                        ast.parse(new)
+                    except SyntaxError as e:
+                        return None, f"syntax error at line {e.lineno}"
+                if n_lines >= 20 and len(new.splitlines()) < 0.6 * n_lines:
+                    return None, f"looks truncated ({len(new.splitlines())} of {n_lines} lines)"
+                return new, ""
+
             r = self.llm.chat(Role.EDIT, msgs, run=self.run_id, max_tokens=budget, thinking=False, temperature=0.1)
-            new = _code_block(r.content)
-            if new is None or new.strip() == current.strip():
-                return None
-            if path.endswith(".py"):
-                try:
-                    ast.parse(new)
-                except SyntaxError as e:
-                    self.ev.log(f"bulk rewrite of {path} rejected: syntax error at line {e.lineno}")
-                    return None
-            if n_lines >= 20 and len(new.splitlines()) < 0.6 * n_lines:
-                self.ev.log(f"bulk rewrite of {path} rejected: looks truncated")
+            new, why = check(r.content)
+            if new is None and why != "unchanged":
+                # One retry, with the problem spelled out; partial files are the usual failure.
+                msgs = msgs + [{"role": "assistant", "content": r.content[-4000:]},
+                               {"role": "user", "content": f"That reply was unusable ({why}). Return the ENTIRE "
+                                f"file, all {n_lines} lines with the migrations applied, in one code block."}]
+                r = self.llm.chat(Role.EDIT, msgs, run=self.run_id, max_tokens=budget, thinking=False, temperature=0.0)
+                new, why = check(r.content)
+            if new is None:
+                self.ev.log(f"bulk rewrite of {path} skipped: {why}")
                 return None
             return path, current, new
 
