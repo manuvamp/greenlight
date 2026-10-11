@@ -50,17 +50,28 @@ export function isEvent(e: unknown): e is RunEvent {
   return typeof o.type === "string" && EVENT_TYPES.has(o.type) && typeof o.seq === "number" && typeof o.t === "number";
 }
 
+// Static build (GitHub Pages): no server, the read-only endpoints are pre-rendered JSON files
+// written by scripts/build_static.py, and live runs are off.
+const STATIC = import.meta.env.VITE_STATIC === "1";
+const BASE = import.meta.env.BASE_URL;
+
+function get<T>(path: string): Promise<T> {
+  return request<T>(STATIC ? `${BASE}${path.slice(1)}.json` : path);
+}
+
 export const api = {
-  health: () => request<Health>("/api/health"),
-  replays: () => request<ReplayMeta[]>("/api/replays"),
-  replay: async (id: string) => normalizeEvents(await request<unknown>(`/api/replays/${encodeURIComponent(id)}`)),
-  scoreboard: () => request<Scoreboard>("/api/scoreboard"),
-  cases: () => request<CaseInfo[]>("/api/cases"),
+  health: () => get<Health>("/api/health"),
+  replays: () => get<ReplayMeta[]>("/api/replays"),
+  replay: async (id: string) => normalizeEvents(await get<unknown>(`/api/replays/${encodeURIComponent(id)}`)),
+  scoreboard: () => get<Scoreboard>("/api/scoreboard"),
+  cases: () => get<CaseInfo[]>("/api/cases"),
   startRun: (body: { case: string; code: string }) =>
-    request<{ run_id: string }>("/api/runs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    }),
+    STATIC
+      ? Promise.reject(new ApiError(503, "Live runs are off on this static demo. Watch a recorded replay instead."))
+      : request<{ run_id: string }>("/api/runs", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        }),
   streamUrl: (runId: string) => `/api/runs/${encodeURIComponent(runId)}/stream`,
 };

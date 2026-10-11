@@ -6,6 +6,8 @@ Greenlight reads the official migration guide, rewrites your code for the new ma
 
 All of it runs on **NVIDIA Nemotron models served by Nebius Token Factory**, with **Tavily** for research.
 
+**Live demo (recorded Nemotron runs, replayed event by event):** https://manuvamp.github.io/greenlight/
+
 > Built for the [Nebius × NVIDIA Global AI Hackathon](https://nebiusglobalaihackathon.devpost.com/), Coding & Agentic Engineering track. MIT licensed.
 
 ```
@@ -162,6 +164,9 @@ uvicorn server.app:app --port 8080
 ```
 
 Replays are always available. Live runs need `GREENLIGHT_LIVE=1` and `GREENLIGHT_ACCESS_CODE`.
+
+The public demo is a static build of the same app (`VITE_STATIC=1`, then `scripts/build_static.py`
+pre-renders the replays and scoreboard), deployed to GitHub Pages by `.github/workflows/pages.yml`.
 
 ## Repository layout
 
