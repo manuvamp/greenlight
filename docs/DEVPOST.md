@@ -104,6 +104,7 @@ We tested on 12 real public repositories stuck on pydantic 1, numpy 1 or SQLAlch
 
 ### Testing instructions for judges
 
+- **Video:** https://youtu.be/hGBN20OSocQ
 - **Demo URL:** https://manuvamp.github.io/greenlight/. Recorded Nemotron runs replay event by event and cost nothing. Live runs are disabled on the public demo because they spend real credits; the Try page shows how they work.
 - **Run it yourself:** see the README. You need Python 3.11+, Docker, a Nebius Token Factory key and a Tavily key. Then run `greenlight upgrade examples/pydantic-v1-shop pydantic@2`.
 - **Eval data and run logs:** `evals/results/eval-official/` (combined), `eval-nemotron/` and `eval-nemotron-2/`.

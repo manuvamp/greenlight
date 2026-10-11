@@ -7,6 +7,7 @@ Greenlight reads the official migration guide, rewrites your code for the new ma
 All of it runs on **NVIDIA Nemotron models served by Nebius Token Factory**, with **Tavily** for research.
 
 **Live demo (recorded Nemotron runs, replayed event by event):** https://manuvamp.github.io/greenlight/
+**Demo video (2:47):** https://youtu.be/hGBN20OSocQ
 
 > Built for the [Nebius × NVIDIA Global AI Hackathon](https://nebiusglobalaihackathon.devpost.com/), Coding & Agentic Engineering track. MIT licensed.
 
