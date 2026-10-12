@@ -1,0 +1,23 @@
+You are working in the Greenlight repo (a Python agent that upgrades a dependency across a major version and fixes the code until the project's own tests pass). Make ONE focused change, run the unit tests, and commit it. Do not touch anything else.
+
+## The problem (found in neatlogs traces)
+In `greenlight/agent.py`, `Upgrader._fix` runs an editor tool loop. When the editor calls the `run_tests` tool with no selection and the full suite comes back green (every baseline test passes again), the loop does NOT stop: the editor model gets another turn, usually re-reads a file and then calls `finish`, and after the step loop the code runs the full test suite AGAIN (`final_text = run_tests_tool("")`) even though nothing changed since the green run. Across 14 past stand-in runs that reached green in the tool loop, every one made 1-7 wasted editor calls after the suite was already green, plus one redundant full test run.
+
+## The fix
+Inside `_fix`:
+1. Track the code state at which a full (unselected) test run proved the suite green: in `run_tests_tool`, when `not sel` and `baseline.passed <= tr.passed`, remember `tb.state` (the ToolBox code-state counter that increments on every edit; `tb` is created after `run_tests_tool` is defined, so use a `nonlocal` variable initialised to `None` and read `tb.state` at call time). Any other result clears it.
+2. In the per-step loop, right after the tool calls of a turn are processed (next to the `if tb.finished is not None: break`), if the remembered green state equals `tb.state`, log via `self.ev.log("full suite green; stopping the editor without another turn")` and break.
+3. After the step loop, only re-run the full suite if the code changed since the green run: `final_text = run_tests_tool("")` becomes conditional; when skipped, set `final_text = ""` (the green branch breaks right after and never uses it).
+Keep the existing comment style (short, plain comments explaining why). Keep "Always judge by a fresh full run" semantics: the green verdict still comes from a real full run, just not a duplicate one.
+
+## Then
+- Run `.venv\Scripts\python.exe -m pytest -q tests` and make sure all tests pass. Add one small unit test only if it's easy without Docker; otherwise skip it.
+- `git add greenlight/agent.py` (and the test if added) and commit with message:
+  "Stop the editor as soon as a full test run is green
+
+  neatlogs traces showed the editor kept taking turns (re-reads, then finish) after run_tests
+  reported ALL PASS, and the loop re-ran the full suite once more. Every stand-in run that went
+  green in the tool loop wasted 1-7 editor calls this way.
+
+  Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>"
+- Do not push. Print the commit hash at the end.
