@@ -1,4 +1,4 @@
-﻿[project]
+[project]
 name = "greenlight"
 version = "0.1.0"
 description = "An agent that does the breaking dependency upgrades Dependabot can't: reads the migration guide, edits code, runs tests in a sandbox until green."
