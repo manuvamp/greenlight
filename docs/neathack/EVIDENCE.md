@@ -4,6 +4,8 @@ Greenlight is an agent that completes one substantial task end to end: **upgrade
 major version (pydantic 1→2, numpy 1→2, SQLAlchemy 1.4→2.0) and fix the code until the project's own test suite
 passes again**, then prove the pass is real and open a PR. Every claim below links to something you can check.
 
+**Demo video (2:47, covers neatlogs, Entire and cfo.ai):** [`docs/neathack/greenlight-neathack-demo.mp4`](greenlight-neathack-demo.mp4). The X post carries a 2:18 cut because X limits video length.
+
 | What judges asked for | Where to check it |
 |---|---|
 | **Agent does a substantial task end to end** | The pipeline: `greenlight/agent.py` (baseline → bump → research → plan → migrate → repair → editor tool loop → verify → PR). Results on 12 real repos: [`evals/results/eval-official`](../../evals/results/eval-official), live replays at https://manuvamp.github.io/greenlight/ |
