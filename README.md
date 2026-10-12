@@ -13,7 +13,8 @@ All of it runs on **NVIDIA Nemotron models served by Nebius Token Factory**, wit
 
 > **neatHack (Oct 10–12, 2026):** every run is traced in **neatlogs**. The traces showed the editor kept taking turns
 > after the tests were already green; the fix cut LLM calls 21% and input tokens 24% on the same repo. The fix was written by
-> a Claude Code session captured with **Entire** Checkpoints. Business plan: [`docs/neathack/business-plan.md`](docs/neathack/business-plan.md).
+> a Claude Code session captured with **Entire** Checkpoints, and the business is planned with **cfo.ai**
+> ([`docs/neathack/business-plan.md`](docs/neathack/business-plan.md)).
 > Evidence with links and numbers: [`docs/neathack/EVIDENCE.md`](docs/neathack/EVIDENCE.md).
 > Trace your own runs: `pip install neatlogs`, set `NEATLOGS_API_KEY`, run `greenlight upgrade ...` as usual.
 
