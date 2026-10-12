@@ -86,6 +86,7 @@ def _wrap(owner: Any, attr: str, kind: str, name: str | Callable[..., str],
             if kind == "WORKFLOW":
                 global last_trace_id
                 last_trace_id = format(sp.get_span_context().trace_id, "032x")
+                a[0].trace_id = last_trace_id  # the Upgrader; parallel eval cases each keep their own
             if inputs:
                 _set(sp, **{"input.value": inputs(*a, **kw)})
             try:

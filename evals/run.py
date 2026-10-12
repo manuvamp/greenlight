@@ -26,6 +26,7 @@ from greenlight.config import load_env  # noqa: E402
 
 load_env()
 
+from greenlight import tracing  # noqa: E402
 from greenlight.agent import UpgradeSpec, Upgrader  # noqa: E402
 from greenlight.executor import get_executor  # noqa: E402
 
@@ -58,6 +59,7 @@ def run_case(c: dict, a: argparse.Namespace, out: Path) -> dict:
     res = up.run()
     ex.cleanup()
     d = asdict(res)
+    d["neatlogs_trace"] = getattr(up, "trace_id", "")
     d["case"] = c["id"]
     d["lib"] = c["lib"]
     (out / f"{c['id']}.json").write_text(json.dumps(d, indent=2, default=str), encoding="utf-8")
@@ -134,6 +136,7 @@ def main() -> int:
     out = RESULTS / tag
     (out / "events").mkdir(parents=True, exist_ok=True)
     print(f"{len(cases)} cases → {out}", flush=True)
+    tracing.init(tags=["greenlight", "eval", tag])
     rows = []
     with ThreadPoolExecutor(max_workers=a.parallel) as pool:
         futs = {pool.submit(run_case, c, a, out): c for c in cases}
@@ -148,6 +151,7 @@ def main() -> int:
             print(f"[{len(rows)}/{len(cases)}] {r['case']:28s} {r['status']:14s} ${r['usd']:.3f} "
                   f"{r['seconds']:.0f}s  {r['headline'][:100]}", flush=True)
     summarize(rows, out, a)
+    tracing.flush()
     return 0
 
 
