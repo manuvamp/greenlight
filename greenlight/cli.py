@@ -8,6 +8,7 @@ import sys
 from dataclasses import asdict
 from pathlib import Path
 
+from . import tracing
 from .config import load_env
 
 
@@ -27,6 +28,7 @@ def _upgrade(a: argparse.Namespace) -> int:
                        bulk=not a.no_bulk)
     runs = Path(a.runs_dir)
     ex = get_executor(a.executor)
+    tracing.init(tags=["greenlight", f"{lib}@{major}", *a.tag])
     up = Upgrader(spec, ex, runs_dir=runs)
     if not a.quiet:
         up.ev.subscribe(console_printer)
@@ -36,6 +38,9 @@ def _upgrade(a: argparse.Namespace) -> int:
     out.write_text(json.dumps(asdict(res), indent=2, default=str), encoding="utf-8")
     print(f"\n{res.status.upper()}: {res.headline}")
     print(f"cost ${res.usd:.4f} · {res.seconds:.0f}s · {res.iterations} iteration(s) · events {runs / (res.run_id + '.jsonl')}")
+    if tracing.enabled():
+        tracing.flush()
+        print(f"neatlogs trace {tracing.last_trace_id}")
     if a.show_diff and res.diff:
         print("\n" + res.diff)
     return 0 if res.status in ("green", "noop") else 1
@@ -80,6 +85,7 @@ def main(argv: list[str] | None = None) -> int:
     u.add_argument("--runs-dir", default="runs")
     u.add_argument("--show-diff", action="store_true")
     u.add_argument("--quiet", action="store_true")
+    u.add_argument("--tag", action="append", default=[], help="extra neatlogs trace tag (repeatable)")
     u.set_defaults(fn=_upgrade)
 
     b = sub.add_parser("budget", help="show spend against the caps")

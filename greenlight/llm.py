@@ -18,6 +18,7 @@ from typing import Any, Callable
 import openai
 from openai import OpenAI
 
+from . import tracing
 from .budget import Budget
 from .models import ALL, STANDIN, THINKING, Model, Role, route
 
@@ -103,6 +104,7 @@ class LLM:
             if not key:
                 raise LLMError("NEBIUS_API_KEY is not set")
             self.client = OpenAI(base_url=BASE_URL, api_key=key, timeout=timeout, max_retries=0)
+        self.client = tracing.wrap_client(self.client)
         self.budget = budget or Budget()
         self.model_override = model_override
         self.listeners: list[Callable[[CallRecord], None]] = []
