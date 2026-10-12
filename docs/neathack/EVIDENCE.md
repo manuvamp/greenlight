@@ -13,7 +13,7 @@ passes again**, then prove the pass is real and open a PR. Every claim below lin
 | **Entire: Checkpoints** | Enabled in the repo (`.entire/settings.json`, hooks in `.claude/settings.json`). Checkpoint `01M4R8E64AQPMSR6BFWPV1H74J` links fix commit `2c0d677` to the Claude Code session that wrote it (captured by Entire's hooks). Checkpoint `01M4R8BSCGQXAM5K6A6T1GRD1B` attaches the session that built Greenlight (Oct 10–12; secrets redacted by Entire). Both are pushed as `refs/entire/checkpoints/*` on GitHub: `git fetch origin 'refs/entire/*:refs/entire/*' && entire checkpoint list`. |
 | **Business plan** | [`docs/neathack/business-plan.md`](business-plan.md) (pricing, costs, revenue, runway); inputs from measured run costs in [`business-inputs.md`](business-inputs.md). |
 | **Code written during the event** | `git log --reverse`: first commit `b8b9106` on **Oct 10 17:07 IST** (kickoff was 12:30 IST); every commit is dated Oct 10–12. |
-| **Building in public** | Posts tagged #neatHack: see the submission form / README. |
+| **Building in public** | #neatHack progress post with the neatlogs trace: https://x.com/TheHomelessEnt/status/2109656444811579843 · demo video quote-post: see the submission. |
 
 ## The improvement, in numbers
 
