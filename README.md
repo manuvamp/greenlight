@@ -12,7 +12,8 @@ All of it runs on **NVIDIA Nemotron models served by Nebius Token Factory**, wit
 > Built for the [Nebius × NVIDIA Global AI Hackathon](https://nebiusglobalaihackathon.devpost.com/), Coding & Agentic Engineering track. MIT licensed.
 
 > **neatHack (Oct 10–12, 2026):** every run is traced in **neatlogs**. The traces showed the editor kept taking turns
-> after the tests were already green; the fix cut LLM calls 21% and input tokens 24% on the same repo. The fix was written by
+> after the tests were already green. After the fix, a before/after pair on the same repo used 21% fewer LLM calls and
+> 24% fewer input tokens (the fix removes the post-green turn and test run; the rest of that gap is run-to-run variance). The fix was written by
 > a Claude Code session captured with **Entire** Checkpoints, and the business is planned with **cfo.ai**
 > ([`docs/neathack/business-plan.md`](docs/neathack/business-plan.md)).
 > Evidence with links and numbers: [`docs/neathack/EVIDENCE.md`](docs/neathack/EVIDENCE.md).

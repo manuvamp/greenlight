@@ -1,6 +1,6 @@
 # Greenlight: business inputs (for cfo.ai)
 
-Every cost number below comes from measured runs (`~/.greenlight/ledger.jsonl`, `evals/results/`).
+Every per-run cost below comes from measured runs (`~/.greenlight/ledger.jsonl`, `evals/results/`); prices, fixed costs, growth and cash are planning assumptions.
 
 ## Product
 Greenlight Cloud: a GitHub App that opens **verified** dependency-upgrade PRs. Point it at a repo and a
@@ -43,4 +43,4 @@ Team plan at full use: 25 runs × $0.57 = $14.25 COGS on $99 → **86% gross mar
 - Plan mix: 85% Team, 15% Business. Logo churn 3% / month.
 
 ## Cash
-- Starting cash: $15,000 (founder + hackathon prize / credits). No outside funding assumed.
+- Starting cash: $15,000 (planning assumption). No outside funding assumed.

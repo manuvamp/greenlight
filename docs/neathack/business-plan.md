@@ -98,5 +98,4 @@ Growth: 3 paying teams in month 1, +40% / month to month 6, +20% to month 12, +1
 - **Biggest risk:** the green rate on real repos (6/12 green on Nemotron today, 11/12 with stronger stand-in models).
   Every point of green rate is revenue, because customers only pay overage for green PRs. Tracing every run in neatlogs
   and fixing what the traces show is how that rate goes up; see [`EVIDENCE.md`](EVIDENCE.md).
-- **What would change the plan:** LLM cost per run is the main COGS lever. The neatHack fix already cut input tokens
-  ~24% on the measured pair.
+- **What would change the plan:** LLM cost per run is the main COGS lever. The neatHack fix removes one wasted editor turn and one test run from every green run.
