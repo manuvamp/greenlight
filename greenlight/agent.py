@@ -423,10 +423,14 @@ class Upgrader:
         plan = self._plan(ws, failures, rules_txt)
         self.ev.stage("plan", "done", detail=f"{len(plan.get('steps', []))} steps")
 
+        # Code state (tb.state) at which a full run proved the suite green; None if the last run wasn't.
+        green_state: int | None = None
+
         def run_tests_tool(select: str) -> str:
-            nonlocal current
+            nonlocal current, green_state
             sel = select.split() if select else None
             tr = ws.run_tests(sel)
+            green_state = tb.state if (not sel and baseline.passed <= tr.passed) else None
             text = render(group_failures(tr), tr, limit_chars=7000) if (tr.failed or tr.collection_error) else ""
             if not sel:
                 current = tr
@@ -551,8 +555,13 @@ class Upgrader:
                 _compact_tool_args(messages[-1 - len(r.tool_calls)])
                 if tb.finished is not None:
                     break
-            # Always judge by a fresh full run, not the model's word.
-            final_text = run_tests_tool("")
+                # A full run is green and nothing changed since: another turn would only re-read and finish.
+                if green_state is not None and green_state == tb.state:
+                    self.ev.log("full suite green; stopping the editor without another turn")
+                    break
+            # Always judge by a fresh full run, not the model's word. Skip it only when a full run
+            # already proved green at this exact code state (the green branch below never uses the text).
+            final_text = run_tests_tool("") if green_state != tb.state else ""
             kept = len(baseline.passed & current.passed)
             self.ev.stage("fix", "done", detail=f"iteration {it}: {kept}/{len(baseline.passed)} baseline tests pass")
             if baseline.passed <= current.passed:
