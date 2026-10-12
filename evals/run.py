@@ -49,7 +49,7 @@ def spec_for(c: dict, a: argparse.Namespace) -> UpgradeSpec:
         python=c.get("python"), test_args=c.get("test_args", ""), test_env=c.get("test_env", {}),
         baseline_pins=c.get("baseline_pins", []), extra_deps=c.get("extra_deps", []),
         precheck=a.precheck, editor=a.editor, model_override=a.model, use_research=not a.no_research,
-        max_minutes=a.max_minutes, max_iterations=a.max_iterations,
+        max_minutes=a.max_minutes, max_iterations=a.max_iterations, bulk=not a.no_bulk,
     )
 
 
@@ -125,6 +125,7 @@ def main() -> int:
     p.add_argument("--editor", default="super-first")
     p.add_argument("--model")
     p.add_argument("--no-research", action="store_true")
+    p.add_argument("--no-bulk", action="store_true", help="skip the one-pass parallel migration (editor loop only)")
     p.add_argument("--max-minutes", type=float, default=15)
     p.add_argument("--max-iterations", type=int, default=5)
     p.add_argument("--parallel", type=int, default=2)

@@ -1,0 +1,45 @@
+{
+  "tag": "neathack-before",
+  "cases": 1,
+  "green": 1,
+  "partial": 0,
+  "failed": 0,
+  "errors": 0,
+  "green_rate": 1.0,
+  "median_usd_green": 0.0807,
+  "median_seconds_green": 125.4,
+  "total_usd": 0.0807,
+  "by_role_usd": {
+    "plan:Nemotron 3 Ultra": 0.01861,
+    "edit:Nemotron 3 Super": 0.06183,
+    "write:Nemotron 3.5 Lightning": 0.00027
+  },
+  "rows": [
+    {
+      "case": "blocklib",
+      "lib": "pydantic",
+      "status": "green",
+      "headline": "pydantic 1.10.26 \u2192 2.14.1: all 40 baseline tests pass",
+      "usd": 0.08071,
+      "seconds": 125.4,
+      "iterations": 1,
+      "escalations": 0,
+      "from_version": "1.10.26",
+      "to_version": "2.14.1",
+      "baseline": {
+        "passed": 40,
+        "failed": 0,
+        "skipped": 0,
+        "total": 40,
+        "collection_error": false
+      },
+      "final": {
+        "passed": 40,
+        "failed": 0,
+        "skipped": 0,
+        "total": 40,
+        "collection_error": false
+      }
+    }
+  ]
+}
